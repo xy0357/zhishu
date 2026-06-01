@@ -1,0 +1,218 @@
+### 健康检查
+GET http://127.0.0.1:8080/api/health
+
+### 登录
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@123456"
+}
+
+### 使用说明
+# 先执行“登录”接口，复制返回体中的 access_token，
+# 再把下方所有 Authorization 里的 <ACCESS_TOKEN> 替换成真实值。
+
+### 当前用户
+GET http://127.0.0.1:8080/api/auth/me
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 首页看板
+GET http://127.0.0.1:8080/api/dashboard
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 分类列表
+GET http://127.0.0.1:8080/api/categories
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 新增分类
+POST http://127.0.0.1:8080/api/categories
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "category_name": "运维规范",
+  "description": "运维制度与规范"
+}
+
+### 更新分类
+PUT http://127.0.0.1:8080/api/categories/运维规范
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "category_name": "运维制度",
+  "description": "运维制度与流程"
+}
+
+### 删除分类
+DELETE http://127.0.0.1:8080/api/categories/运维制度
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 标签列表
+GET http://127.0.0.1:8080/api/tags
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 新增标签
+POST http://127.0.0.1:8080/api/tags
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "tag_name": "手册",
+  "description": "操作手册标签"
+}
+
+### 更新标签
+PUT http://127.0.0.1:8080/api/tags/手册
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "tag_name": "说明书",
+  "description": "说明书与手册标签"
+}
+
+### 删除标签
+DELETE http://127.0.0.1:8080/api/tags/说明书
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 用户列表
+GET http://127.0.0.1:8080/api/users
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 角色列表
+GET http://127.0.0.1:8080/api/roles
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 新增用户
+POST http://127.0.0.1:8080/api/users
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "username": "viewer",
+  "role_name": "普通用户",
+  "department": "财务",
+  "email": "viewer@example.com",
+  "password": "Viewer@123456"
+}
+
+### 更新用户
+PUT http://127.0.0.1:8080/api/users/3
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "username": "viewer",
+  "role_name": "知识管理员",
+  "department": "知识运营",
+  "email": "viewer-updated@example.com",
+  "password": "Viewer@654321"
+}
+
+### 收藏列表
+GET http://127.0.0.1:8080/api/favorites
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 最近阅读
+GET http://127.0.0.1:8080/api/read-records/recent
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 文档列表
+GET http://127.0.0.1:8080/api/documents
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 文档详情
+GET http://127.0.0.1:8080/api/documents/1
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 文档 FAQ
+GET http://127.0.0.1:8080/api/documents/1/faqs
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 新增 FAQ
+POST http://127.0.0.1:8080/api/documents/1/faqs
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "question": "权限开通后如何确认？",
+  "answer": "由申请人登录后自行验证。"
+}
+
+### 更新 FAQ
+PUT http://127.0.0.1:8080/api/faqs/2
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "question": "权限开通后如何验证？",
+  "answer": "由申请人登录数据库后自行验证。"
+}
+
+### 删除 FAQ
+DELETE http://127.0.0.1:8080/api/faqs/2
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 记录阅读
+POST http://127.0.0.1:8080/api/documents/1/read
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 切换收藏
+POST http://127.0.0.1:8080/api/documents/1/favorite
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 新增文档
+POST http://127.0.0.1:8080/api/documents
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "title": "报销制度说明",
+  "summary": "用于演示新增文档接口。",
+  "content": "1. 发票需在7日内提交。\n2. 部门负责人审批后进入财务复核。",
+  "category_name": "财务制度",
+  "tags": ["报销", "财务"],
+  "change_note": "初始化文档"
+}
+
+### 发布文档
+POST http://127.0.0.1:8080/api/documents/1/publish
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 更新文档并生成新版本
+PUT http://127.0.0.1:8080/api/documents/1
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "title": "数据库权限申请流程（修订）",
+  "summary": "补充了审批与开通说明。",
+  "content": "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。\n4. 开通后由申请人确认。",
+  "category_name": "制度流程",
+  "tags": ["数据库", "权限", "流程", "修订"],
+  "change_note": "补充开通确认步骤"
+}
+
+### 归档文档
+POST http://127.0.0.1:8080/api/documents/1/archive
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 智能问答
+POST http://127.0.0.1:8080/api/qa/ask
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "question_text": "如何申请数据库权限？"
+}
+
+### Agent 记录
+GET http://127.0.0.1:8080/api/agent-runs
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 问答历史
+GET http://127.0.0.1:8080/api/questions/history
+Authorization: Bearer <ACCESS_TOKEN>

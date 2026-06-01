@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.vite/
+.DS_Store
+Thumbs.db
+frontend/node_modules/
+frontend/dist/
+backend/target/
+.env
+.env.*
+!.env.example
+tmp/
+CHANGELOG.md
+DATA_MAP.md
+PAGE_MAP.md
+PROJECT_BRIEF.md

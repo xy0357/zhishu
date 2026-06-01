@@ -1,0 +1,127 @@
+{
+  "documents": [
+    {
+      "document_id": 1,
+      "title": "数据库权限申请流程",
+      "summary": "用于说明企业内部数据库权限申请的标准流程。",
+      "content": "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。",
+      "category_name": "制度流程",
+      "status": "published",
+      "version_no": "v1.0.0",
+      "is_favorite": false,
+      "tags": [
+        "数据库",
+        "权限",
+        "流程"
+      ],
+      "versions": [
+        {
+          "version_id": 1,
+          "version_no": "v1.0.0",
+          "title": "数据库权限申请流程",
+          "content": "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。",
+          "summary": "用于说明企业内部数据库权限申请的标准流程。",
+          "change_note": "初始版本",
+          "created_at": "2026-06-01T09:00:00Z"
+        }
+      ]
+    }
+  ],
+  "managed_categories": [
+    {
+      "category_name": "制度流程",
+      "description": "制度流程相关知识分类",
+      "document_count": 1
+    }
+  ],
+  "managed_tags": [
+    {
+      "tag_name": "数据库",
+      "description": "数据库主题标签",
+      "document_count": 1
+    },
+    {
+      "tag_name": "权限",
+      "description": "权限主题标签",
+      "document_count": 1
+    },
+    {
+      "tag_name": "流程",
+      "description": "流程主题标签",
+      "document_count": 1
+    }
+  ],
+  "managed_roles": [
+    {
+      "role_name": "系统管理员",
+      "description": "平台超级管理员"
+    },
+    {
+      "role_name": "知识管理员",
+      "description": "知识内容与FAQ维护人员"
+    },
+    {
+      "role_name": "普通用户",
+      "description": "普通知识使用者"
+    }
+  ],
+  "users": [
+    {
+      "user_id": 1,
+      "username": "admin",
+      "role_name": "系统管理员",
+      "department": "IT",
+      "email": "admin@example.com"
+    },
+    {
+      "user_id": 2,
+      "username": "editor",
+      "role_name": "知识管理员",
+      "department": "知识运营",
+      "email": "editor@example.com"
+    }
+  ],
+  "user_credentials": [
+    {
+      "user_id": 1,
+      "username": "admin",
+      "password": "sha256$120000$demo-admin-salt$pnc7jgDa3Cj0lPv2DdN2lFqVPLUFsUylXlvKFF4wt2s"
+    },
+    {
+      "user_id": 2,
+      "username": "editor",
+      "password": "sha256$120000$demo-editor-salt$vjgPW8YlwYsTKTQZ0mFXsbAegkhyYEtZ16qtKHsDwUM"
+    }
+  ],
+  "faq_items": [
+    {
+      "faq_id": 1,
+      "document_id": 1,
+      "question": "数据库权限如何申请？",
+      "answer": "提交权限申请单，经直属主管审批后，由 DBA 审核并开通只读账号。",
+      "created_at": "2026-06-01T09:00:00Z"
+    }
+  ],
+  "favorite_documents": [],
+  "read_records": [],
+  "agent_runs": [
+    {
+      "run_id": 1,
+      "agent_type": "summary",
+      "trigger_type": "document_publish",
+      "status": "success",
+      "input_text": "数据库权限申请流程",
+      "output_text": "摘要已生成",
+      "started_at": "2026-06-01T09:00:00Z"
+    }
+  ],
+  "question_history": [],
+  "next_document_id": 2,
+  "next_user_id": 3,
+  "next_version_id": 2,
+  "next_faq_id": 2,
+  "next_read_id": 1,
+  "next_question_id": 1,
+  "next_answer_id": 1,
+  "next_run_id": 2
+}
