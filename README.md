@@ -33,13 +33,30 @@
 
 ## 启动说明
 
-### 0. 环境检查
+### 推荐启动路径
+
+- 如果只是本地快速演示，优先使用默认 `file` 模式，不需要先启动 Docker、MySQL、Redis、Qdrant、MinIO。
+- 如果要验证真实数据库链路，再启动 `infra/docker-compose.yml` 中的依赖，并切换到 `mysql` 模式。
+- 前端默认运行在 `http://localhost:5173`
+- 后端默认运行在 `http://127.0.0.1:8080`
+- 前端默认接口基址为 `http://localhost:8080/api`，即使不创建 `.env.development` 也可直接联调。
+
+### 1. 最小可运行方式：file 模式
+
+先启动后端：
 
 ```powershell
-.\infra\scripts\check-prerequisites.ps1
+.\infra\scripts\start-demo-backend.ps1
 ```
 
-### 1. 前端
+或使用等价命令：
+
+```powershell
+cd backend
+cargo run
+```
+
+再启动前端：
 
 ```powershell
 cd frontend
@@ -47,40 +64,60 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-### 2. 后端
+说明：
+
+- 默认存储模式是 `file`，演示数据会写入 `backend/data/demo-store.json`。
+- `file` 模式下不依赖 MySQL，因此不必先执行 `docker compose up -d`。
+- 当前仓库已自带 `frontend/package-lock.json`，首次启动执行一次 `npm.cmd install` 即可。
+- 若本机尚未安装 Rust 或 Node.js，可先执行环境检查脚本。
+
+### 2. 完整依赖检查
 
 ```powershell
-cd backend
-cargo run
+.\infra\scripts\check-prerequisites.ps1
 ```
 
-默认后端基于轻量文件持久化运行，便于快速演示。后续接入 MySQL 时，可参考 `backend/.env.example` 与 `backend/migrations/001_init.sql`。
-当前默认会把演示数据持久化到 `backend/data/demo-store.json`，因此重启后文档、版本和问答历史仍会保留。
+注意：
 
-也可以直接使用脚本启动：
+- 该脚本会同时检查 `cargo`、`npm`、`docker`、`mysql`。
+- 因此它更适合检查“完整依赖链路”是否齐全，而不是 `file` 模式的必跑前置步骤。
+- 如果你只跑默认演示链路，只要 `cargo` 和 `npm` 可用即可。
+
+### 3. MySQL 模式
+
+先启动基础依赖：
 
 ```powershell
-.\infra\scripts\start-demo-backend.ps1
+cd infra
+docker compose up -d
 ```
 
-如需切换到 MySQL 模式：
-
-```powershell
-$env:APP_STORAGE_BACKEND='mysql'
-$env:MYSQL_URL='mysql://zhishu:zhishu@127.0.0.1:3306/zhishu'
-$env:APP_ACCESS_TOKEN_SECRET='replace-with-your-own-secret'
-cd backend
-cargo run
-```
-
-或直接使用脚本：
+然后启动后端：
 
 ```powershell
 .\infra\scripts\start-mysql-backend.ps1
 ```
 
+或使用等价命令：
+
+```powershell
+$env:APP_STORAGE_BACKEND='mysql'
+$env:MYSQL_URL='mysql://zhishu:zhishu@127.0.0.1:3306/zhishu'
+cd backend
+cargo run
+```
+
 说明：
-- `backend/migrations/001_init.sql` 已包含默认 `role_id=1` 与 `user_id=1` 的种子数据，供当前 MVP 逻辑直接使用。
+
+- `start-mysql-backend.ps1` 会设置 `APP_STORAGE_BACKEND=mysql` 与默认 `MYSQL_URL`。
+- MySQL 模式启动时会自动执行 `backend/migrations/` 下尚未执行的迁移，无需手工先跑 SQL。
+- `backend/.env.example` 提供了完整示例环境变量，其中 `APP_ACCESS_TOKEN_SECRET` 建议在非演示环境中自行覆盖。
+- `infra/.env.example` 提供了 MySQL、Redis、Qdrant、MinIO 的默认连接参数参考。
+- 当前仓库已实现 MySQL 仓储代码并通过 `cargo check` 与单元测试，但本机尚未完成真实 MySQL 运行验收。
+
+### 4. 演示账号与权限
+
+- `backend/migrations/001_init.sql` 已包含默认种子数据，供当前 MVP 逻辑直接使用。
 - 当前演示账号：
   - `admin / Admin@123456`
   - `editor / Editor@123456`
@@ -89,16 +126,6 @@ cargo run
 - 当前角色边界：
   - `admin`：可访问用户目录、分类/标签管理、Agent 记录、文档与 FAQ 管理
   - `editor`：可访问文档与 FAQ 管理、问答、收藏、阅读；不可访问用户目录、分类/标签管理、Agent 记录
-- MySQL 模式启动时会自动执行 `backend/migrations/` 下尚未执行的迁移，无需手工先跑 SQL。
-- MySQL 启动阶段会把默认演示账号密码覆盖为哈希值，迁移脚本里的占位密码不会直接参与登录。
-- 当前仓库已实现 MySQL 仓储代码并通过 `cargo check` 与单元测试，但本机未提供可用 MySQL 服务，所以还没有完成真实库运行验收。
-
-### 3. 基础依赖
-
-```powershell
-cd infra
-docker compose up -d
-```
 
 ## 首版已实现的接口
 

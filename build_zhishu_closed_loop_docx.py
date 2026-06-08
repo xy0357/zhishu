@@ -11,14 +11,25 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt, RGBColor
+from PIL import Image, ImageDraw, ImageFont
 
 
 OUTPUT = Path("知枢_企业知识资产管理与智能检索平台_闭环落地版_修订稿.docx")
+ER_DIAGRAM_DIR = Path("tmp/er_diagrams")
 ACCENT = RGBColor(31, 78, 121)
 ACCENT_LIGHT = "DCE6F1"
 ACCENT_BAND = "EDF3F9"
 WARNING_FILL = "FBE5D6"
 TEXT_DARK = RGBColor(32, 32, 32)
+ER_BG = (247, 250, 252)
+ER_HEADER = (79, 129, 189)
+ER_HEADER_TEXT = (255, 255, 255)
+ER_BORDER = (47, 93, 135)
+ER_TEXT = (32, 32, 32)
+ER_LINE = (84, 97, 112)
+ER_PANEL = (255, 255, 255)
+ER_LABEL_FILL = (237, 243, 249)
+ER_NOTE = (96, 96, 96)
 
 
 @dataclass
@@ -26,6 +37,327 @@ class TableSpec:
     headers: Sequence[str]
     rows: Sequence[Sequence[str]]
     widths: Sequence[float] | None = None
+
+
+@dataclass(frozen=True)
+class EntitySpec:
+    key: str
+    title: str
+    center: tuple[int, int]
+    attributes: dict[str, Sequence[str]]
+    width: int = 170
+    height: int = 72
+
+
+@dataclass(frozen=True)
+class RelationshipSpec:
+    key: str
+    title: str
+    center: tuple[int, int]
+    width: int = 110
+    height: int = 72
+
+
+@dataclass(frozen=True)
+class LinkSpec:
+    entity_key: str
+    relationship_key: str
+    entity_card: str
+    relationship_card: str
+
+
+def load_font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    candidates = (
+        Path(r"C:\Windows\Fonts\msyhbd.ttc") if bold else Path(r"C:\Windows\Fonts\msyh.ttc"),
+        Path(r"C:\Windows\Fonts\simhei.ttf") if bold else Path(r"C:\Windows\Fonts\simsun.ttc"),
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return ImageFont.truetype(str(candidate), size=size)
+    return ImageFont.load_default()
+
+
+def measure_text(draw: ImageDraw.ImageDraw, text: str, font) -> tuple[int, int]:
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    return right - left, bottom - top
+
+
+def draw_centered_text(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], text: str, font, fill) -> None:
+    x1, y1, x2, y2 = box
+    text_w, text_h = measure_text(draw, text, font)
+    draw.text(
+        (x1 + (x2 - x1 - text_w) / 2, y1 + (y2 - y1 - text_h) / 2),
+        text,
+        font=font,
+        fill=fill,
+    )
+
+
+def rect_bounds(center: tuple[int, int], width: int, height: int) -> tuple[int, int, int, int]:
+    cx, cy = center
+    half_w = width // 2
+    half_h = height // 2
+    return (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+
+
+def ellipse_bounds(center: tuple[int, int], width: int, height: int) -> tuple[int, int, int, int]:
+    return rect_bounds(center, width, height)
+
+
+def rectangle_border_point(center: tuple[int, int], width: int, height: int, target: tuple[int, int]) -> tuple[int, int]:
+    cx, cy = center
+    tx, ty = target
+    dx = tx - cx
+    dy = ty - cy
+    if dx == 0 and dy == 0:
+        return center
+    scale = max(abs(dx) / (width / 2), abs(dy) / (height / 2))
+    return int(cx + dx / scale), int(cy + dy / scale)
+
+
+def diamond_border_point(center: tuple[int, int], width: int, height: int, target: tuple[int, int]) -> tuple[int, int]:
+    cx, cy = center
+    tx, ty = target
+    dx = tx - cx
+    dy = ty - cy
+    if dx == 0 and dy == 0:
+        return center
+    scale = abs(dx) / (width / 2) + abs(dy) / (height / 2)
+    return int(cx + dx / scale), int(cy + dy / scale)
+
+
+def ellipse_border_point(center: tuple[int, int], width: int, height: int, target: tuple[int, int]) -> tuple[int, int]:
+    cx, cy = center
+    tx, ty = target
+    dx = tx - cx
+    dy = ty - cy
+    if dx == 0 and dy == 0:
+        return center
+    scale = ((dx * dx) / ((width / 2) ** 2) + (dy * dy) / ((height / 2) ** 2)) ** 0.5
+    return int(cx + dx / scale), int(cy + dy / scale)
+
+
+def draw_entity(draw: ImageDraw.ImageDraw, spec: EntitySpec, *, font) -> tuple[int, int, int, int]:
+    bounds = rect_bounds(spec.center, spec.width, spec.height)
+    draw.rectangle(bounds, outline=(20, 20, 20), width=3, fill=(255, 255, 255))
+    draw_centered_text(draw, bounds, spec.title, font, (20, 20, 20))
+    return bounds
+
+
+def draw_relationship(draw: ImageDraw.ImageDraw, spec: RelationshipSpec, *, font) -> tuple[tuple[int, int], ...]:
+    cx, cy = spec.center
+    half_w = spec.width // 2
+    half_h = spec.height // 2
+    points = ((cx, cy - half_h), (cx + half_w, cy), (cx, cy + half_h), (cx - half_w, cy))
+    draw.polygon(points, outline=(20, 20, 20), fill=(255, 255, 255), width=3)
+    draw_centered_text(draw, rect_bounds(spec.center, spec.width - 10, spec.height - 10), spec.title, font, (20, 20, 20))
+    return points
+
+
+def attribute_centers(spec: EntitySpec) -> list[tuple[str, tuple[int, int]]]:
+    centers: list[tuple[str, tuple[int, int]]] = []
+    side_offsets = {
+        "top": (-1, -118),
+        "bottom": (-1, 118),
+        "left": (-165, -1),
+        "right": (165, -1),
+    }
+    side_gap = {"top": 118, "bottom": 118, "left": 78, "right": 78}
+
+    for side, labels in spec.attributes.items():
+        if not labels:
+            continue
+        count = len(labels)
+        for idx, label in enumerate(labels):
+            if side in ("top", "bottom"):
+                gap = side_gap[side]
+                start = spec.center[0] - ((count - 1) * gap) / 2
+                x = int(start + idx * gap)
+                y = spec.center[1] + side_offsets[side][1]
+            else:
+                gap = side_gap[side]
+                start = spec.center[1] - ((count - 1) * gap) / 2
+                x = spec.center[0] + side_offsets[side][0]
+                y = int(start + idx * gap)
+            centers.append((label, (x, y)))
+    return centers
+
+
+def draw_attribute(draw: ImageDraw.ImageDraw, center: tuple[int, int], label: str, *, font) -> tuple[int, int, int, int]:
+    text_w, text_h = measure_text(draw, label, font)
+    width = max(98, text_w + 34)
+    height = max(42, text_h + 20)
+    bounds = ellipse_bounds(center, width, height)
+    draw.ellipse(bounds, outline=(20, 20, 20), width=2, fill=(255, 255, 255))
+    draw_centered_text(draw, bounds, label, font, (20, 20, 20))
+    return bounds
+
+
+def draw_entity_attributes(draw: ImageDraw.ImageDraw, spec: EntitySpec, *, entity_font, attr_font) -> None:
+    entity_bounds = rect_bounds(spec.center, spec.width, spec.height)
+    for label, center in attribute_centers(spec):
+        attr_bounds = draw_attribute(draw, center, label, font=attr_font)
+        start = rectangle_border_point(spec.center, spec.width, spec.height, center)
+        end = ellipse_border_point(center, attr_bounds[2] - attr_bounds[0], attr_bounds[3] - attr_bounds[1], spec.center)
+        draw.line((start, end), fill=(20, 20, 20), width=2)
+
+
+def draw_cardinality(draw: ImageDraw.ImageDraw, position: tuple[int, int], text: str, font) -> None:
+    if not text:
+        return
+    text_w, text_h = measure_text(draw, text, font)
+    draw.rectangle((position[0] - 4, position[1] - 2, position[0] + text_w + 4, position[1] + text_h + 2), fill=(255, 255, 255))
+    draw.text(position, text, font=font, fill=(20, 20, 20))
+
+
+def draw_link(
+    draw: ImageDraw.ImageDraw,
+    entity_map: dict[str, EntitySpec],
+    relationship_map: dict[str, RelationshipSpec],
+    link: LinkSpec,
+    *,
+    card_font,
+) -> None:
+    entity = entity_map[link.entity_key]
+    relationship = relationship_map[link.relationship_key]
+    start = rectangle_border_point(entity.center, entity.width, entity.height, relationship.center)
+    end = diamond_border_point(relationship.center, relationship.width, relationship.height, entity.center)
+    draw.line((start, end), fill=(20, 20, 20), width=3)
+
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    length = max((dx * dx + dy * dy) ** 0.5, 1)
+    nx = -dy / length
+    ny = dx / length
+    start_card_pos = (int(start[0] + dx * 0.28 + nx * 12), int(start[1] + dy * 0.28 + ny * 12))
+    draw_cardinality(draw, start_card_pos, link.entity_card, card_font)
+
+
+def add_diagram_header(draw: ImageDraw.ImageDraw, title: str, subtitle: str) -> None:
+    title_font = load_font(42, bold=True)
+    subtitle_font = load_font(22)
+    draw.text((86, 48), title, font=title_font, fill=ER_BORDER)
+    draw.text((88, 110), subtitle, font=subtitle_font, fill=ER_NOTE)
+    draw.line((86, 148, 1780, 148), fill=(210, 220, 230), width=3)
+
+
+def add_diagram_footer(draw: ImageDraw.ImageDraw, text: str) -> None:
+    footer_font = load_font(20)
+    draw.line((86, 1020, 1780, 1020), fill=(210, 220, 230), width=3)
+    draw.text((88, 1036), text, font=footer_font, fill=ER_NOTE)
+
+
+def render_er_diagram(
+    path: Path,
+    *,
+    title: str,
+    subtitle: str,
+    footer: str,
+    entities: Sequence[EntitySpec],
+    relationships: Sequence[RelationshipSpec],
+    links: Sequence[LinkSpec],
+) -> None:
+    image = Image.new("RGB", (1860, 1100), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    entity_font = load_font(22, bold=True)
+    relation_font = load_font(20, bold=True)
+    attr_font = load_font(18)
+    card_font = load_font(20, bold=True)
+
+    add_diagram_header(draw, title, subtitle)
+
+    entity_map = {entity.key: entity for entity in entities}
+    relationship_map = {relation.key: relation for relation in relationships}
+
+    for entity in entities:
+        draw_entity(draw, entity, font=entity_font)
+    for relationship in relationships:
+        draw_relationship(draw, relationship, font=relation_font)
+    for link in links:
+        draw_link(draw, entity_map, relationship_map, link, card_font=card_font)
+    for entity in entities:
+        draw_entity_attributes(draw, entity, entity_font=entity_font, attr_font=attr_font)
+
+    add_diagram_footer(draw, footer)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(path)
+
+
+def build_er_diagrams() -> dict[str, Path]:
+    diagrams = {
+        "er1": ER_DIAGRAM_DIR / "er-1-core-knowledge.png",
+        "er2": ER_DIAGRAM_DIR / "er-2-qa-traceability.png",
+    }
+
+    render_er_diagram(
+        diagrams["er1"],
+        title="ER-1 基础知识管理域",
+        subtitle="概念层只保留真正独立的核心实体：角色、用户、分类、文档、标签、文档版本，边上标注 1 或 N。",
+        footer="图示重点：先讲清谁在维护文档、文档属于哪类、文档如何打标签以及如何形成版本。",
+        entities=[
+            EntitySpec("roles", "角色", (360, 280), {"top": ["角色编号"], "left": ["角色名称"], "right": ["角色说明"]}),
+            EntitySpec("users", "用户", (360, 780), {"left": ["用户编号", "部门"], "bottom": ["用户名"]}),
+            EntitySpec("categories", "分类", (940, 280), {"top": ["分类编号"], "left": ["分类名称"], "right": ["分类说明"]}),
+            EntitySpec("documents", "文档", (940, 560), {"left": ["文档编号"], "bottom": ["标题"], "right": ["状态"]}),
+            EntitySpec("tags", "标签", (1500, 280), {"top": ["标签编号"], "left": ["标签名称"], "right": ["标签说明"]}),
+            EntitySpec("versions", "文档版本", (1500, 780), {"left": ["版本编号"], "bottom": ["版本号"], "right": ["变更说明"]}, width=190),
+        ],
+        relationships=[
+            RelationshipSpec("owns", "拥有", (360, 530)),
+            RelationshipSpec("creates", "创建", (650, 670)),
+            RelationshipSpec("belongs", "归属", (940, 420)),
+            RelationshipSpec("binds", "绑定", (1220, 420)),
+            RelationshipSpec("derives", "形成版本", (1220, 670), width=128),
+        ],
+        links=[
+            LinkSpec("roles", "owns", "1", "N"),
+            LinkSpec("users", "owns", "N", "1"),
+            LinkSpec("users", "creates", "1", "N"),
+            LinkSpec("documents", "creates", "N", "1"),
+            LinkSpec("documents", "belongs", "N", "1"),
+            LinkSpec("categories", "belongs", "1", "N"),
+            LinkSpec("documents", "binds", "N", "N"),
+            LinkSpec("tags", "binds", "N", "N"),
+            LinkSpec("documents", "derives", "1", "N"),
+            LinkSpec("versions", "derives", "N", "1"),
+        ],
+    )
+
+    render_er_diagram(
+        diagrams["er2"],
+        title="ER-2 问答与版本追溯域",
+        subtitle="概念层只保留问答闭环里最关键的对象：用户、问题、回答、引用证据、文档、文档版本，边上标注 1 或 N。",
+        footer="图示重点：回答不是黑盒文本，它可以通过引用证据回溯到具体文档版本。",
+        entities=[
+            EntitySpec("users", "用户", (260, 320), {"left": ["用户编号"], "bottom": ["用户名"]}),
+            EntitySpec("questions", "问题", (720, 320), {"top": ["问题编号", "问题内容"], "right": ["状态"]}),
+            EntitySpec("answers", "回答", (720, 620), {"left": ["回答编号"], "right": ["模型", "回答时间"]}),
+            EntitySpec("citations", "引用证据", (720, 860), {"left": ["引用编号"], "bottom": ["证据顺序"]}, width=190),
+            EntitySpec("documents", "文档", (1430, 340), {"top": ["文档编号"], "right": ["标题"]}),
+            EntitySpec("versions", "文档版本", (1430, 780), {"right": ["版本编号"], "bottom": ["版本号"]}, width=190),
+        ],
+        relationships=[
+            RelationshipSpec("asks", "提出", (470, 320)),
+            RelationshipSpec("generates", "生成回答", (720, 470), width=128),
+            RelationshipSpec("cites", "引用", (720, 740)),
+            RelationshipSpec("version_from", "形成版本", (1430, 560), width=128),
+            RelationshipSpec("locate_version", "定位版本", (1080, 860), width=128),
+        ],
+        links=[
+            LinkSpec("users", "asks", "1", "N"),
+            LinkSpec("questions", "asks", "N", "1"),
+            LinkSpec("questions", "generates", "1", "N"),
+            LinkSpec("answers", "generates", "N", "1"),
+            LinkSpec("answers", "cites", "1", "N"),
+            LinkSpec("citations", "cites", "N", "1"),
+            LinkSpec("documents", "version_from", "1", "N"),
+            LinkSpec("versions", "version_from", "N", "1"),
+            LinkSpec("citations", "locate_version", "N", "1"),
+            LinkSpec("versions", "locate_version", "1", "N"),
+        ],
+    )
+
+    return diagrams
 
 
 def set_page_layout(doc: Document) -> None:
@@ -188,34 +520,41 @@ def add_callout(doc: Document, title: str, body: str, fill: str = WARNING_FILL) 
     doc.add_paragraph()
 
 
-def add_page_number(paragraph) -> None:
-    fld_begin = OxmlElement("w:fldChar")
-    fld_begin.set(qn("w:fldCharType"), "begin")
-    instr = OxmlElement("w:instrText")
-    instr.set(qn("xml:space"), "preserve")
-    instr.text = " PAGE "
-    fld_separate = OxmlElement("w:fldChar")
-    fld_separate.set(qn("w:fldCharType"), "separate")
-    fld_text = OxmlElement("w:t")
-    fld_text.text = "1"
-    fld_end = OxmlElement("w:fldChar")
-    fld_end.set(qn("w:fldCharType"), "end")
-    paragraph._p.append(fld_begin)
-    paragraph._p.append(instr)
-    paragraph._p.append(fld_separate)
-    paragraph._p.append(fld_text)
-    paragraph._p.append(fld_end)
+def add_figure(doc: Document, image_path: Path, caption: str, note: str) -> None:
+    doc.add_picture(str(image_path), width=Cm(16.5))
+    picture_paragraph = doc.paragraphs[-1]
+    picture_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    style_paragraph(picture_paragraph, space_before=4, space_after=4, line_spacing=1.0)
+    add_paragraph(
+        doc,
+        caption,
+        size=10,
+        bold=True,
+        color=ACCENT,
+        align=WD_ALIGN_PARAGRAPH.CENTER,
+        space_before=0,
+        space_after=2,
+        line_spacing=1.1,
+    )
+    add_paragraph(
+        doc,
+        note,
+        size=9.5,
+        color=RGBColor(96, 96, 96),
+        align=WD_ALIGN_PARAGRAPH.LEFT,
+        space_before=0,
+        space_after=8,
+        line_spacing=1.25,
+    )
 
 
 def configure_footer(doc: Document) -> None:
     footer = doc.sections[0].footer
     para = footer.paragraphs[0]
+    para.text = ""
     para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = para.add_run("知枢闭环落地版修订稿  |  第 ")
+    run = para.add_run("知枢闭环落地版修订稿")
     set_run_font(run, size=9, color=RGBColor(100, 100, 100))
-    add_page_number(para)
-    run2 = para.add_run(" 页")
-    set_run_font(run2, size=9, color=RGBColor(100, 100, 100))
 
 
 def add_cover(doc: Document) -> None:
@@ -371,36 +710,53 @@ def add_section_3(doc: Document) -> None:
 
 def add_section_4(doc: Document) -> None:
     add_section_heading(doc, "4. ER 逻辑重构方案", level=1)
-    add_paragraph(doc, "建议最终 ER 图拆分为 4 张子图，而不是 3 张。这样可以把“问答引用链”和“Agent/向量链”彻底分开。")
+    add_paragraph(
+        doc,
+        "本稿将概念 ER 图压缩为 2 张，只保留真正具有独立业务意义的核心实体。像阅读时间、收藏时间、文件来源、Agent 运行状态这类更适合作为属性、外键或实现层表字段的内容，不再在概念图里单独占一个实体位置。",
+    )
 
     er_maps = TableSpec(
         headers=["子图", "覆盖实体", "核心关系", "拆分理由"],
         rows=[
-            ["ER-1 主数据域", "roles / users / categories / documents", "角色-用户 1:N；用户-文档 1:N；分类-文档 1:N", "说明组织、权限与文档主档归属，供老师快速理解主业务"],
-            ["ER-2 文档增强与行为域", "tags / document_tags / document_versions / read_records / favorite_records", "文档-标签 N:N；文档-版本 1:N；用户-阅读 1:N；用户-收藏 1:N", "把标签、版本、阅读、收藏从主图中拆出去，减少交叉线"],
-            ["ER-3 问答与引用域", "questions / answers / answer_citations / faq_items", "用户-问题 1:N；问题-回答 1:N；回答-引用 1:N；文档版本/分段-引用 1:N", "完整表达一个回答可引用多个证据片段"],
-            ["ER-4 Agent 与向量域", "agent_runs / document_segments / document_files", "版本-分段 1:N；问题/文档/版本-运行 1:N；文件-文档版本 1:N", "把上传文件、分段和 Agent 审计放到单独图中，便于解释实现闭环"],
+            ["ER-1 基础知识管理域", "角色 / 用户 / 分类 / 文档 / 标签 / 文档版本", "角色-用户 1:N；用户-文档 1:N；分类-文档 1:N；文档-标签 N:N；文档-版本 1:N", "保留知识管理主干，去掉阅读记录、收藏记录等实现层行为实体"],
+            ["ER-2 问答与版本追溯域", "用户 / 问题 / 回答 / 引用证据 / 文档 / 文档版本", "用户-问题 1:N；问题-回答 1:N；回答-引用证据 1:N；文档-版本 1:N；引用证据-文档版本 N:1", "保留问答解释链，去掉片段、文件、Agent 运行等实现层细节实体"],
         ],
-        widths=[1.4, 2.2, 2.2, 1.8],
+        widths=[1.5, 2.3, 2.3, 1.9],
     )
-    add_table(doc, er_maps, title="4.1 ER 子图拆分建议")
+    add_table(doc, er_maps, title="4.1 ER 核心子图方案")
+    add_callout(
+        doc,
+        "绘图原则",
+        "概念 ER 图只回答“系统里有哪些核心对象、它们之间是什么关系”。实现层的日志、对象存储、向量分段等内容可以在关系模式或实现设计里体现，但不再占用概念实体位置。",
+        fill=ACCENT_LIGHT,
+    )
+
+    diagrams = build_er_diagrams()
+    add_figure(
+        doc,
+        diagrams["er1"],
+        "图 4-1  基础知识管理域 ER 图",
+        "讲解顺序建议从角色、用户、分类、文档讲起，再补标签和文档版本，先把知识库主干讲清楚。",
+    )
+    add_figure(
+        doc,
+        diagrams["er2"],
+        "图 4-2  问答与版本追溯域 ER 图",
+        "该图强调回答不是直接挂在文档上，而是通过引用证据回溯到具体文档版本，从而体现答案可解释性。",
+    )
 
     relationship_spec = TableSpec(
         headers=["联系名称", "参与实体", "基数", "落地方式"],
         rows=[
-            ["拥有", "roles - users", "1:N", "users.role_id -> roles.role_id"],
-            ["创建", "users - documents", "1:N", "documents.creator_id -> users.user_id"],
-            ["归属", "categories - documents", "1:N", "documents.category_id -> categories.category_id"],
-            ["绑定", "documents - tags", "N:N", "document_tags(document_id, tag_id) 唯一"],
-            ["派生", "documents - document_versions", "1:N", "document_versions.document_id -> documents.document_id"],
-            ["形成阅读", "users - read_records", "1:N", "read_records.user_id -> users.user_id"],
-            ["形成收藏", "users - favorite_records", "1:N", "favorite_records.user_id -> users.user_id"],
-            ["提出", "users - questions", "1:N", "questions.user_id -> users.user_id"],
-            ["生成答案", "questions - answers", "1:N", "answers.question_id -> questions.question_id"],
-            ["引用证据", "answers - answer_citations", "1:N", "answer_citations.answer_id -> answers.answer_id"],
-            ["来源 FAQ", "documents - faq_items", "1:N", "faq_items.document_id -> documents.document_id"],
-            ["切分为", "document_versions - document_segments", "1:N", "document_segments.version_id -> document_versions.version_id"],
-            ["触发执行", "users/questions/documents - agent_runs", "1:N", "agent_runs 中以可空 FK 表示运行上下文"],
+            ["拥有", "角色 - 用户", "1:N", "用户.角色编号 -> 角色.角色编号"],
+            ["创建", "用户 - 文档", "1:N", "文档.创建者编号 -> 用户.用户编号"],
+            ["归属", "分类 - 文档", "1:N", "文档.分类编号 -> 分类.分类编号"],
+            ["绑定", "文档 - 标签", "N:N", "通过 文档标签(文档编号, 标签编号) 转换"],
+            ["形成版本", "文档 - 文档版本", "1:N", "文档版本.文档编号 -> 文档.文档编号"],
+            ["提出", "用户 - 问题", "1:N", "问题.用户编号 -> 用户.用户编号"],
+            ["生成回答", "问题 - 回答", "1:N", "回答.问题编号 -> 问题.问题编号"],
+            ["引用证据", "回答 - 引用证据", "1:N", "引用证据.回答编号 -> 回答.回答编号"],
+            ["定位版本", "引用证据 - 文档版本", "N:1", "引用证据.版本编号 -> 文档版本.版本编号"],
         ],
         widths=[1.1, 1.8, 0.8, 3.0],
     )
@@ -409,6 +765,28 @@ def add_section_4(doc: Document) -> None:
 
 def add_section_5(doc: Document) -> None:
     add_section_heading(doc, "5. 关系模型汇总与关键表详细设计", level=1)
+    add_paragraph(
+        doc,
+        "本节先给出与 ER 图完全对应的中文关系模式，再给出落地到物理表后的关键表设计。转换原则是：`1..1 / 1..N` 联系并入 `N` 端实体；`1..N / 1..N` 联系单独转换为中间关系模式。",
+    )
+    relation_modes = TableSpec(
+        headers=["类别", "中文关系模式", "说明"],
+        rows=[
+            ["实体", "角色(角色编号 PK，角色名称，角色说明)", "对应 ER-1 中的角色实体"],
+            ["实体", "用户(用户编号 PK，角色编号 FK，用户名，部门)", "“拥有”联系并入用户，角色编号作为外键"],
+            ["实体", "分类(分类编号 PK，分类名称，分类说明)", "对应 ER-1 中的分类实体"],
+            ["实体", "标签(标签编号 PK，标签名称，标签说明)", "对应 ER-1 中的标签实体"],
+            ["实体", "文档(文档编号 PK，分类编号 FK，创建者编号 FK，标题，状态)", "“归属”“创建”联系并入文档"],
+            ["实体", "文档版本(版本编号 PK，文档编号 FK，版本号，变更说明)", "“形成版本”联系并入文档版本"],
+            ["实体", "问题(问题编号 PK，用户编号 FK，问题内容，状态)", "“提出”联系并入问题"],
+            ["实体", "回答(回答编号 PK，问题编号 FK，模型，回答时间)", "“生成回答”联系并入回答"],
+            ["实体", "引用证据(引用编号 PK，回答编号 FK，版本编号 FK，证据顺序)", "回答通过引用证据定位到文档版本"],
+            ["联系", "文档标签(文档编号 PK/FK，标签编号 PK/FK)", "“文档-标签”是多对多联系，需单独转换"],
+        ],
+        widths=[0.8, 4.3, 1.9],
+    )
+    add_table(doc, relation_modes, title="5.1 中文关系模式表")
+
     summary = TableSpec(
         headers=["物理表", "用途", "关键约束"],
         rows=[
@@ -431,7 +809,7 @@ def add_section_5(doc: Document) -> None:
         ],
         widths=[1.8, 2.3, 2.4],
     )
-    add_table(doc, summary, title="5.1 关系模型汇总表")
+    add_table(doc, summary, title="5.2 关系模型汇总表")
 
     add_table(
         doc,
@@ -452,7 +830,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.5, 1.2, 1.6, 2.4],
         ),
-        title="5.2 documents（文档当前快照）",
+        title="5.3 documents（文档当前快照）",
         notes=["说明：documents 不保存历史正文的唯一来源，而是保存当前可读快照；历史内容以 document_versions 为准。"],
     )
 
@@ -475,7 +853,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.4, 1.1, 1.8, 2.4],
         ),
-        title="5.3 document_versions（文档历史版本）",
+        title="5.4 document_versions（文档历史版本）",
     )
 
     add_table(
@@ -494,7 +872,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.4, 1.1, 1.7, 2.5],
         ),
-        title="5.4 answers（回答主表）",
+        title="5.5 answers（回答主表）",
     )
 
     add_table(
@@ -513,7 +891,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.4, 1.4, 2.2, 1.8],
         ),
-        title="5.5 answer_citations（多证据引用表）",
+        title="5.6 answer_citations（多证据引用表）",
         notes=["这是本次修订的关键表，用来解决“一个回答只能引用一篇文档”的原始缺陷。"],
     )
 
@@ -534,7 +912,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.4, 1.4, 2.2, 1.8],
         ),
-        title="5.6 document_segments（分段元数据表）",
+        title="5.7 document_segments（分段元数据表）",
     )
 
     add_table(
@@ -557,7 +935,7 @@ def add_section_5(doc: Document) -> None:
             ],
             widths=[1.0, 1.3, 1.3, 1.2],
         ),
-        title="5.7 agent_runs（执行审计主表）",
+        title="5.8 agent_runs（执行审计主表）",
         notes=["不再强制要求每条 Agent 记录必须绑定单个 document_id；问答型运行可仅绑定 question_id / answer_id。"],
     )
 
