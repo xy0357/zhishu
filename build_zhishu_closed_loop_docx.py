@@ -188,7 +188,7 @@ def draw_attribute(draw: ImageDraw.ImageDraw, center: tuple[int, int], label: st
     width = max(98, text_w + 34)
     height = max(42, text_h + 20)
     bounds = ellipse_bounds(center, width, height)
-    draw.ellipse(bounds, outline=(20, 20, 20), width=2, fill=(255, 255, 255))
+    draw.rounded_rectangle(bounds, radius=12, outline=(20, 20, 20), width=2, fill=(255, 255, 255))
     draw_centered_text(draw, bounds, label, font, (20, 20, 20))
     return bounds
 
@@ -198,7 +198,7 @@ def draw_entity_attributes(draw: ImageDraw.ImageDraw, spec: EntitySpec, *, entit
     for label, center in attribute_centers(spec):
         attr_bounds = draw_attribute(draw, center, label, font=attr_font)
         start = rectangle_border_point(spec.center, spec.width, spec.height, center)
-        end = ellipse_border_point(center, attr_bounds[2] - attr_bounds[0], attr_bounds[3] - attr_bounds[1], spec.center)
+        end = rectangle_border_point(center, attr_bounds[2] - attr_bounds[0], attr_bounds[3] - attr_bounds[1], spec.center)
         draw.line((start, end), fill=(20, 20, 20), width=2)
 
 
@@ -231,20 +231,20 @@ def draw_link(
     ny = dx / length
     start_card_pos = (int(start[0] + dx * 0.28 + nx * 12), int(start[1] + dy * 0.28 + ny * 12))
     draw_cardinality(draw, start_card_pos, link.entity_card, card_font)
+    end_card_pos = (int(start[0] + dx * 0.72 + nx * 12), int(start[1] + dy * 0.72 + ny * 12))
+    draw_cardinality(draw, end_card_pos, link.relationship_card, card_font)
 
 
 def add_diagram_header(draw: ImageDraw.ImageDraw, title: str, subtitle: str) -> None:
-    title_font = load_font(42, bold=True)
-    subtitle_font = load_font(22)
-    draw.text((86, 48), title, font=title_font, fill=ER_BORDER)
-    draw.text((88, 110), subtitle, font=subtitle_font, fill=ER_NOTE)
-    draw.line((86, 148, 1780, 148), fill=(210, 220, 230), width=3)
+    title_font = load_font(40, bold=True)
+    subtitle_font = load_font(22, bold=True)
+    draw_centered_text(draw, (120, 36, 1740, 96), title, title_font, (0, 0, 0))
+    draw_centered_text(draw, (120, 98, 1740, 140), subtitle, subtitle_font, (0, 0, 0))
 
 
 def add_diagram_footer(draw: ImageDraw.ImageDraw, text: str) -> None:
     footer_font = load_font(20)
-    draw.line((86, 1020, 1780, 1020), fill=(210, 220, 230), width=3)
-    draw.text((88, 1036), text, font=footer_font, fill=ER_NOTE)
+    draw.text((100, 1026), text, font=footer_font, fill=ER_NOTE)
 
 
 def render_er_diagram(
@@ -291,69 +291,69 @@ def build_er_diagrams() -> dict[str, Path]:
 
     render_er_diagram(
         diagrams["er1"],
-        title="ER-1 基础知识管理域",
-        subtitle="概念层只保留真正独立的核心实体：角色、用户、分类、文档、标签、文档版本，边上标注 1 或 N。",
-        footer="图示重点：先讲清谁在维护文档、文档属于哪类、文档如何打标签以及如何形成版本。",
+        title="图 4-1：基础知识管理域 E-R 图",
+        subtitle="实体先画矩形框，属性不含外码；联系采用菱形，数量关系在线两端标注 1 或 n。",
+        footer="说明：先从角色、用户、分类、文档讲起，再补标签和文档版本。",
         entities=[
-            EntitySpec("roles", "角色", (360, 280), {"top": ["角色编号"], "left": ["角色名称"], "right": ["角色说明"]}),
-            EntitySpec("users", "用户", (360, 780), {"left": ["用户编号", "部门"], "bottom": ["用户名"]}),
-            EntitySpec("categories", "分类", (940, 280), {"top": ["分类编号"], "left": ["分类名称"], "right": ["分类说明"]}),
+            EntitySpec("roles", "角色", (320, 270), {"top": ["角色编号"], "left": ["角色名称"], "right": ["角色说明"]}),
+            EntitySpec("users", "用户", (320, 770), {"left": ["用户编号"], "bottom": ["用户名"], "right": ["部门"]}),
+            EntitySpec("categories", "分类", (940, 250), {"top": ["分类编号"], "left": ["分类名称"], "right": ["分类说明"]}),
             EntitySpec("documents", "文档", (940, 560), {"left": ["文档编号"], "bottom": ["标题"], "right": ["状态"]}),
-            EntitySpec("tags", "标签", (1500, 280), {"top": ["标签编号"], "left": ["标签名称"], "right": ["标签说明"]}),
-            EntitySpec("versions", "文档版本", (1500, 780), {"left": ["版本编号"], "bottom": ["版本号"], "right": ["变更说明"]}, width=190),
+            EntitySpec("tags", "标签", (1540, 270), {"top": ["标签编号"], "left": ["标签名称"], "right": ["标签说明"]}),
+            EntitySpec("versions", "文档版本", (1540, 770), {"left": ["版本编号"], "bottom": ["版本号"], "right": ["变更说明"]}, width=190),
         ],
         relationships=[
-            RelationshipSpec("owns", "拥有", (360, 530)),
-            RelationshipSpec("creates", "创建", (650, 670)),
-            RelationshipSpec("belongs", "归属", (940, 420)),
-            RelationshipSpec("binds", "绑定", (1220, 420)),
-            RelationshipSpec("derives", "形成版本", (1220, 670), width=128),
+            RelationshipSpec("owns", "拥有", (320, 520)),
+            RelationshipSpec("creates", "创建", (630, 665)),
+            RelationshipSpec("belongs", "归属", (940, 405)),
+            RelationshipSpec("binds", "标注", (1240, 405)),
+            RelationshipSpec("derives", "形成版本", (1240, 665), width=128),
         ],
         links=[
-            LinkSpec("roles", "owns", "1", "N"),
-            LinkSpec("users", "owns", "N", "1"),
-            LinkSpec("users", "creates", "1", "N"),
-            LinkSpec("documents", "creates", "N", "1"),
-            LinkSpec("documents", "belongs", "N", "1"),
-            LinkSpec("categories", "belongs", "1", "N"),
-            LinkSpec("documents", "binds", "N", "N"),
-            LinkSpec("tags", "binds", "N", "N"),
-            LinkSpec("documents", "derives", "1", "N"),
-            LinkSpec("versions", "derives", "N", "1"),
+            LinkSpec("roles", "owns", "1", "n"),
+            LinkSpec("users", "owns", "n", "1"),
+            LinkSpec("users", "creates", "1", "n"),
+            LinkSpec("documents", "creates", "n", "1"),
+            LinkSpec("documents", "belongs", "n", "1"),
+            LinkSpec("categories", "belongs", "1", "n"),
+            LinkSpec("documents", "binds", "n", "n"),
+            LinkSpec("tags", "binds", "n", "n"),
+            LinkSpec("documents", "derives", "1", "n"),
+            LinkSpec("versions", "derives", "n", "1"),
         ],
     )
 
     render_er_diagram(
         diagrams["er2"],
-        title="ER-2 问答与版本追溯域",
-        subtitle="概念层只保留问答闭环里最关键的对象：用户、问题、回答、引用证据、文档、文档版本，边上标注 1 或 N。",
-        footer="图示重点：回答不是黑盒文本，它可以通过引用证据回溯到具体文档版本。",
+        title="图 4-2：问答与版本追溯域 E-R 图",
+        subtitle="按题意只保留核心实体与联系，属性不写外码；引用证据负责把回答与文档版本连接起来。",
+        footer="说明：重点突出“问题—回答—引用证据—文档版本”的可追溯关系。",
         entities=[
-            EntitySpec("users", "用户", (260, 320), {"left": ["用户编号"], "bottom": ["用户名"]}),
-            EntitySpec("questions", "问题", (720, 320), {"top": ["问题编号", "问题内容"], "right": ["状态"]}),
-            EntitySpec("answers", "回答", (720, 620), {"left": ["回答编号"], "right": ["模型", "回答时间"]}),
-            EntitySpec("citations", "引用证据", (720, 860), {"left": ["引用编号"], "bottom": ["证据顺序"]}, width=190),
-            EntitySpec("documents", "文档", (1430, 340), {"top": ["文档编号"], "right": ["标题"]}),
-            EntitySpec("versions", "文档版本", (1430, 780), {"right": ["版本编号"], "bottom": ["版本号"]}, width=190),
+            EntitySpec("users", "用户", (270, 320), {"left": ["用户编号"], "bottom": ["用户名"]}),
+            EntitySpec("questions", "问题", (760, 300), {"top": ["问题编号"], "left": ["问题内容"], "right": ["状态"]}),
+            EntitySpec("answers", "回答", (760, 600), {"left": ["回答编号"], "right": ["模型"], "bottom": ["回答时间"]}),
+            EntitySpec("citations", "引用证据", (760, 860), {"left": ["引用编号"], "bottom": ["证据顺序"]}, width=190),
+            EntitySpec("documents", "文档", (1490, 320), {"top": ["文档编号"], "right": ["标题"]}),
+            EntitySpec("versions", "文档版本", (1490, 800), {"right": ["版本编号"], "bottom": ["版本号"]}, width=190),
         ],
         relationships=[
-            RelationshipSpec("asks", "提出", (470, 320)),
-            RelationshipSpec("generates", "生成回答", (720, 470), width=128),
-            RelationshipSpec("cites", "引用", (720, 740)),
-            RelationshipSpec("version_from", "形成版本", (1430, 560), width=128),
-            RelationshipSpec("locate_version", "定位版本", (1080, 860), width=128),
+            RelationshipSpec("asks", "提出", (500, 320)),
+            RelationshipSpec("generates", "生成回答", (760, 455), width=128),
+            RelationshipSpec("cites", "引用", (760, 730)),
+            RelationshipSpec("version_from", "形成版本", (1490, 565), width=128),
+            RelationshipSpec("locate_version", "定位版本", (1115, 860), width=128),
         ],
         links=[
-            LinkSpec("users", "asks", "1", "N"),
-            LinkSpec("questions", "asks", "N", "1"),
-            LinkSpec("questions", "generates", "1", "N"),
-            LinkSpec("answers", "generates", "N", "1"),
-            LinkSpec("answers", "cites", "1", "N"),
-            LinkSpec("citations", "cites", "N", "1"),
-            LinkSpec("documents", "version_from", "1", "N"),
-            LinkSpec("versions", "version_from", "N", "1"),
-            LinkSpec("citations", "locate_version", "N", "1"),
-            LinkSpec("versions", "locate_version", "1", "N"),
+            LinkSpec("users", "asks", "1", "n"),
+            LinkSpec("questions", "asks", "n", "1"),
+            LinkSpec("questions", "generates", "1", "n"),
+            LinkSpec("answers", "generates", "n", "1"),
+            LinkSpec("answers", "cites", "1", "n"),
+            LinkSpec("citations", "cites", "n", "1"),
+            LinkSpec("documents", "version_from", "1", "n"),
+            LinkSpec("versions", "version_from", "n", "1"),
+            LinkSpec("citations", "locate_version", "n", "1"),
+            LinkSpec("versions", "locate_version", "1", "n"),
         ],
     )
 
@@ -712,14 +712,14 @@ def add_section_4(doc: Document) -> None:
     add_section_heading(doc, "4. ER 逻辑重构方案", level=1)
     add_paragraph(
         doc,
-        "本稿将概念 ER 图压缩为 2 张，只保留真正具有独立业务意义的核心实体。像阅读时间、收藏时间、文件来源、Agent 运行状态这类更适合作为属性、外键或实现层表字段的内容，不再在概念图里单独占一个实体位置。",
+        "本节统一改成数据库课程标准答题格式：先画实体，再补属性与联系，数量关系直接在线两端写 1 或 n；属性里不写外码，外码只在后面的关系模式里体现。",
     )
 
     er_maps = TableSpec(
-        headers=["子图", "覆盖实体", "核心关系", "拆分理由"],
+        headers=["子图", "覆盖实体", "核心关系", "作图说明"],
         rows=[
-            ["ER-1 基础知识管理域", "角色 / 用户 / 分类 / 文档 / 标签 / 文档版本", "角色-用户 1:N；用户-文档 1:N；分类-文档 1:N；文档-标签 N:N；文档-版本 1:N", "保留知识管理主干，去掉阅读记录、收藏记录等实现层行为实体"],
-            ["ER-2 问答与版本追溯域", "用户 / 问题 / 回答 / 引用证据 / 文档 / 文档版本", "用户-问题 1:N；问题-回答 1:N；回答-引用证据 1:N；文档-版本 1:N；引用证据-文档版本 N:1", "保留问答解释链，去掉片段、文件、Agent 运行等实现层细节实体"],
+            ["ER-1 基础知识管理域", "角色 / 用户 / 分类 / 文档 / 标签 / 文档版本", "角色-用户 1:n；用户-文档 1:n；分类-文档 1:n；文档-标签 n:n；文档-版本 1:n", "实体画矩形，属性单独挂接，不在属性中写外码"],
+            ["ER-2 问答与版本追溯域", "用户 / 问题 / 回答 / 引用证据 / 文档 / 文档版本", "用户-问题 1:n；问题-回答 1:n；回答-引用证据 1:n；文档-版本 1:n；引用证据-文档版本 n:1", "按题意只保留核心问答追溯链，避免实现层实体混入概念图"],
         ],
         widths=[1.5, 2.3, 2.3, 1.9],
     )
@@ -727,7 +727,7 @@ def add_section_4(doc: Document) -> None:
     add_callout(
         doc,
         "绘图原则",
-        "概念 ER 图只回答“系统里有哪些核心对象、它们之间是什么关系”。实现层的日志、对象存储、向量分段等内容可以在关系模式或实现设计里体现，但不再占用概念实体位置。",
+        "概念 E-R 图只回答“有哪些实体、有哪些联系、联系基数是多少”。像外码、日志、对象存储、向量分段这些实现层内容，不直接画进实体属性里。",
         fill=ACCENT_LIGHT,
     )
 
@@ -736,27 +736,27 @@ def add_section_4(doc: Document) -> None:
         doc,
         diagrams["er1"],
         "图 4-1  基础知识管理域 ER 图",
-        "讲解顺序建议从角色、用户、分类、文档讲起，再补标签和文档版本，先把知识库主干讲清楚。",
+        "讲解顺序建议：先说明实体，再说明联系，最后逐条读线两端的 1 或 n。",
     )
     add_figure(
         doc,
         diagrams["er2"],
         "图 4-2  问答与版本追溯域 ER 图",
-        "该图强调回答不是直接挂在文档上，而是通过引用证据回溯到具体文档版本，从而体现答案可解释性。",
+        "该图强调回答不是直接连到文档，而是通过引用证据定位到文档版本，从而体现答案可追溯。",
     )
 
     relationship_spec = TableSpec(
         headers=["联系名称", "参与实体", "基数", "落地方式"],
         rows=[
-            ["拥有", "角色 - 用户", "1:N", "用户.角色编号 -> 角色.角色编号"],
-            ["创建", "用户 - 文档", "1:N", "文档.创建者编号 -> 用户.用户编号"],
-            ["归属", "分类 - 文档", "1:N", "文档.分类编号 -> 分类.分类编号"],
-            ["绑定", "文档 - 标签", "N:N", "通过 文档标签(文档编号, 标签编号) 转换"],
-            ["形成版本", "文档 - 文档版本", "1:N", "文档版本.文档编号 -> 文档.文档编号"],
-            ["提出", "用户 - 问题", "1:N", "问题.用户编号 -> 用户.用户编号"],
-            ["生成回答", "问题 - 回答", "1:N", "回答.问题编号 -> 问题.问题编号"],
-            ["引用证据", "回答 - 引用证据", "1:N", "引用证据.回答编号 -> 回答.回答编号"],
-            ["定位版本", "引用证据 - 文档版本", "N:1", "引用证据.版本编号 -> 文档版本.版本编号"],
+            ["拥有", "角色 - 用户", "1:n", "一对多联系并入用户，用户表中保存角色编号(FK)"],
+            ["创建", "用户 - 文档", "1:n", "一对多联系并入文档，文档表中保存创建者编号(FK)"],
+            ["归属", "分类 - 文档", "1:n", "一对多联系并入文档，文档表中保存分类编号(FK)"],
+            ["标注", "文档 - 标签", "n:n", "多对多联系单独转换为文档标签关系模式"],
+            ["形成版本", "文档 - 文档版本", "1:n", "一对多联系并入文档版本，文档版本表中保存文档编号(FK)"],
+            ["提出", "用户 - 问题", "1:n", "一对多联系并入问题，问题表中保存用户编号(FK)"],
+            ["生成回答", "问题 - 回答", "1:n", "一对多联系并入回答，回答表中保存问题编号(FK)"],
+            ["引用", "回答 - 引用证据", "1:n", "一对多联系并入引用证据，引用证据表中保存回答编号(FK)"],
+            ["定位版本", "引用证据 - 文档版本", "n:1", "一对多联系并入引用证据，引用证据表中保存版本编号(FK)"],
         ],
         widths=[1.1, 1.8, 0.8, 3.0],
     )
@@ -767,25 +767,44 @@ def add_section_5(doc: Document) -> None:
     add_section_heading(doc, "5. 关系模型汇总与关键表详细设计", level=1)
     add_paragraph(
         doc,
-        "本节先给出与 ER 图完全对应的中文关系模式，再给出落地到物理表后的关键表设计。转换原则是：`1..1 / 1..N` 联系并入 `N` 端实体；`1..N / 1..N` 联系单独转换为中间关系模式。",
+        "本节按数据库课程标准答案格式来写：先写实体，再把 1:1 和 1:n 联系并入对应实体，外码不算主属性；最后单独写 n:n 联系转换出的新关系模式。",
     )
+    add_paragraph(doc, "5.1 先写实体（再加入 1:1 和 1:n 的联系，外码均不是主属性）", size=11.5, bold=True, color=ACCENT, space_before=6, space_after=6)
     relation_modes = TableSpec(
-        headers=["类别", "中文关系模式", "说明"],
+        headers=["关系模式", "说明"],
         rows=[
-            ["实体", "角色(角色编号 PK，角色名称，角色说明)", "对应 ER-1 中的角色实体"],
-            ["实体", "用户(用户编号 PK，角色编号 FK，用户名，部门)", "“拥有”联系并入用户，角色编号作为外键"],
-            ["实体", "分类(分类编号 PK，分类名称，分类说明)", "对应 ER-1 中的分类实体"],
-            ["实体", "标签(标签编号 PK，标签名称，标签说明)", "对应 ER-1 中的标签实体"],
-            ["实体", "文档(文档编号 PK，分类编号 FK，创建者编号 FK，标题，状态)", "“归属”“创建”联系并入文档"],
-            ["实体", "文档版本(版本编号 PK，文档编号 FK，版本号，变更说明)", "“形成版本”联系并入文档版本"],
-            ["实体", "问题(问题编号 PK，用户编号 FK，问题内容，状态)", "“提出”联系并入问题"],
-            ["实体", "回答(回答编号 PK，问题编号 FK，模型，回答时间)", "“生成回答”联系并入回答"],
-            ["实体", "引用证据(引用编号 PK，回答编号 FK，版本编号 FK，证据顺序)", "回答通过引用证据定位到文档版本"],
-            ["联系", "文档标签(文档编号 PK/FK，标签编号 PK/FK)", "“文档-标签”是多对多联系，需单独转换"],
+            ["角色（角色编号，角色名称，角色说明）", "角色是独立实体"],
+            ["用户（用户编号，用户名，部门，角色编号(FK)）", "“拥有”联系并入用户"],
+            ["分类（分类编号，分类名称，分类说明）", "分类是独立实体"],
+            ["标签（标签编号，标签名称，标签说明）", "标签是独立实体"],
+            ["文档（文档编号，标题，状态，分类编号(FK)，创建者编号(FK)）", "“归属”“创建”联系并入文档"],
+            ["文档版本（版本编号，版本号，变更说明，文档编号(FK)）", "“形成版本”联系并入文档版本"],
+            ["问题（问题编号，问题内容，状态，用户编号(FK)）", "“提出”联系并入问题"],
+            ["回答（回答编号，模型，回答时间，问题编号(FK)）", "“生成回答”联系并入回答"],
+            ["引用证据（引用编号，证据顺序，回答编号(FK)，版本编号(FK)）", "“引用”“定位版本”联系并入引用证据"],
         ],
-        widths=[0.8, 4.3, 1.9],
+        widths=[4.9, 2.1],
     )
-    add_table(doc, relation_modes, title="5.1 中文关系模式表")
+    add_table(doc, relation_modes)
+    add_paragraph(doc, "5.2 再写 n:n 的联系（新表中外码同时也是主属性）", size=11.5, bold=True, color=ACCENT, space_before=6, space_after=6)
+    add_table(
+        doc,
+        TableSpec(
+            headers=["关系模式", "说明"],
+            rows=[
+                ["文档标签（文档编号(FK)，标签编号(FK)）", "对应“文档-标签”这个 n:n 联系；联合主码可写为（文档编号，标签编号）"],
+            ],
+            widths=[4.9, 2.1],
+        ),
+    )
+    add_paragraph(
+        doc,
+        "说明：本项目的核心概念层只有“文档-标签”这一类典型 n:n 联系，其余联系都可以通过外码并入 1:n 联系中的 n 端实体。",
+        size=9.8,
+        color=RGBColor(96, 96, 96),
+        space_before=2,
+        space_after=8,
+    )
 
     summary = TableSpec(
         headers=["物理表", "用途", "关键约束"],

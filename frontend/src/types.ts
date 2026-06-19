@@ -1,3 +1,13 @@
+export interface DocumentFileMeta {
+  file_id: number;
+  object_key: string;
+  original_name: string;
+  mime_type: string;
+  file_size: number;
+  sha256: string | null;
+  created_at: string;
+}
+
 export interface DocumentListItem {
   document_id: number;
   title: string;
@@ -12,10 +22,22 @@ export interface DocumentListItem {
 export interface DocumentVersion {
   version_id: number;
   version_no: string;
+  source_file_id: number | null;
   title: string;
   content: string;
   summary: string;
   change_note: string;
+  created_at: string;
+}
+
+export interface DocumentSegment {
+  segment_id: number;
+  version_id: number;
+  document_id: number;
+  chunk_order: number;
+  chunk_text: string;
+  token_count: number | null;
+  embedding_status: string;
   created_at: string;
 }
 
@@ -29,6 +51,7 @@ export interface DocumentDetail {
   version_no: string;
   is_favorite: boolean;
   tags: string[];
+  source_file: DocumentFileMeta | null;
   versions: DocumentVersion[];
 }
 
@@ -74,6 +97,20 @@ export interface DocumentFormPayload {
   category_name: string;
   tags: string[];
   change_note: string;
+  source_file_id?: number;
+}
+
+export interface RegisterDocumentFilePayload {
+  original_name: string;
+  mime_type: string;
+  file_size: number;
+  sha256?: string | null;
+}
+
+export interface UploadDocumentFilePayload {
+  original_name: string;
+  mime_type: string;
+  content_base64: string;
 }
 
 export interface DashboardSummary {
@@ -83,8 +120,32 @@ export interface DashboardSummary {
   total_agent_runs: number;
 }
 
+export interface DependencyHealthItem {
+  configured: string;
+  host: string;
+  port: number;
+  required: boolean;
+  reachable: boolean;
+  bucket?: string;
+  mode?: string;
+}
+
+export interface HealthStatus {
+  service: string;
+  status: string;
+  storage_backend: string;
+  route_profile: string;
+  dependencies: {
+    mysql: DependencyHealthItem;
+    redis: DependencyHealthItem;
+    qdrant: DependencyHealthItem;
+    minio: DependencyHealthItem;
+  };
+}
+
 export interface Citation {
   cite_order: number;
+  segment_id: number | null;
   document_title: string;
   version_no: string;
   snippet_text: string;
@@ -110,10 +171,16 @@ export interface AgentRun {
   run_id: number;
   agent_type: string;
   trigger_type: string;
+  document_id: number | null;
+  version_id: number | null;
+  question_id: number | null;
+  answer_id: number | null;
   status: string;
   input_text: string;
   output_text: string;
+  meta_json: string | null;
   started_at: string;
+  finished_at: string | null;
 }
 
 export interface UserItem {
@@ -153,8 +220,19 @@ export interface LoginPayload {
 
 export interface AuthSession {
   access_token: string;
+  expires_at: string;
   token_type: string;
   user: UserItem;
+}
+
+export interface RefreshSession {
+  access_token: string;
+  expires_at: string;
+  token_type: string;
+}
+
+export interface ResetPasswordPayload {
+  password: string;
 }
 
 export interface FavoriteDocumentItem {

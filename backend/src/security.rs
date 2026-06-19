@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::{
     app::AppState,
     config::AppConfig,
-    models::{ApiResponse, AuthSession, UserItem},
+    models::{ApiResponse, AuthSession, RefreshSessionResponse, UserItem},
 };
 
 pub const ADMIN_USERNAME: &str = "admin";
@@ -31,14 +31,25 @@ struct AccessTokenClaims {
 }
 
 pub fn build_auth_session(config: &AppConfig, user: UserItem) -> AuthSession {
+    let (access_token, expires_at) = issue_access_token(config, &user.username);
     AuthSession {
-        access_token: issue_access_token(config, &user.username),
+        access_token,
+        expires_at,
         token_type: "Bearer".to_string(),
         user,
     }
 }
 
-pub fn issue_access_token(config: &AppConfig, username: &str) -> String {
+pub fn build_refresh_session(config: &AppConfig, username: &str) -> RefreshSessionResponse {
+    let (access_token, expires_at) = issue_access_token(config, username);
+    RefreshSessionResponse {
+        access_token,
+        expires_at,
+        token_type: "Bearer".to_string(),
+    }
+}
+
+pub fn issue_access_token(config: &AppConfig, username: &str) -> (String, chrono::DateTime<Utc>) {
     let issued_at = Utc::now().timestamp();
     let expires_at = issued_at + config.access_token_ttl_hours.max(1) * 3600;
     let claims = AccessTokenClaims {
@@ -50,12 +61,15 @@ pub fn issue_access_token(config: &AppConfig, username: &str) -> String {
     let payload = serde_json::to_vec(&claims).expect("serialize access token claims");
     let encoded_payload = URL_SAFE_NO_PAD.encode(payload);
     let signature = sign_token_payload(&config.access_token_secret, &encoded_payload);
-    format!("{}.{}.{}", TOKEN_PREFIX, encoded_payload, signature)
+    (
+        format!("{}.{}.{}", TOKEN_PREFIX, encoded_payload, signature),
+        chrono::DateTime::<Utc>::from_timestamp(expires_at, 0).unwrap_or_else(Utc::now),
+    )
 }
 
 #[cfg(test)]
 pub fn issue_test_access_token(config: &AppConfig, username: &str) -> String {
-    issue_access_token(config, username)
+    issue_access_token(config, username).0
 }
 
 pub fn hash_password(password: &str) -> String {

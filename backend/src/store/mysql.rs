@@ -6,10 +6,11 @@ use sqlx::{MySql, MySqlPool, Row, Transaction};
 use crate::{
     models::{
         AgentRun, CategoryItem, CategoryUpsertRequest, Citation, CreateDocumentRequest,
-        DashboardSummary, DeletedResource, DocumentDetail, DocumentListItem, DocumentVersion,
-        FaqItem, FaqUpsertRequest, FavoriteDocumentItem, FavoriteState, QaAnswer,
-        QuestionHistoryItem, ReadRecordItem, RoleItem, TagItem, TagUpsertRequest,
-        UpdateDocumentRequest, UserCreateRequest, UserItem, UserUpdateRequest,
+        DashboardSummary, DeletedResource, DocumentDetail, DocumentFileMeta, DocumentListItem,
+        DocumentSegment, DocumentVersion, FaqItem, FaqUpsertRequest, FavoriteDocumentItem,
+        FavoriteState, QaAnswer, QuestionHistoryItem, ReadRecordItem, RegisterDocumentFileRequest,
+        RoleItem, TagItem, TagUpsertRequest, UpdateDocumentRequest, UserCreateRequest, UserItem,
+        UserUpdateRequest,
     },
     security::{
         hash_password, verify_password, ADMIN_PASSWORD, ADMIN_USERNAME, EDITOR_PASSWORD,
@@ -30,6 +31,7 @@ impl MySqlStore {
         MIGRATOR.run(&pool).await?;
         let store = Self { pool };
         store.ensure_bootstrap_data().await?;
+        store.backfill_document_segments().await?;
         Ok(store)
     }
 
@@ -80,6 +82,130 @@ impl MySqlStore {
         .execute(&self.pool)
         .await?;
 
+        let document_count =
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM documents")
+                .fetch_one(&self.pool)
+                .await?;
+        if document_count == 0 {
+            let mut tx = self.pool.begin().await?;
+            let category_id = Self::ensure_category(&mut tx, "制度流程").await?;
+
+            let insert_document = sqlx::query(
+                "INSERT INTO documents (
+                    category_id, creator_id, current_version_no, title, summary, status, published_at, created_at, updated_at
+                 ) VALUES (?, 1, 'v1.0.0', ?, ?, 'published', UTC_TIMESTAMP(), UTC_TIMESTAMP(), UTC_TIMESTAMP())",
+            )
+            .bind(category_id)
+            .bind("数据库权限申请流程")
+            .bind("用于说明企业内部数据库权限申请的标准流程。")
+            .execute(tx.as_mut())
+            .await?;
+            let document_id = insert_document.last_insert_id() as i64;
+
+            let insert_version = sqlx::query(
+                "INSERT INTO document_versions (
+                    document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
+                 ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, 1, 1, UTC_TIMESTAMP())",
+            )
+            .bind(document_id)
+            .bind("数据库权限申请流程")
+            .bind("1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。")
+            .bind("用于说明企业内部数据库权限申请的标准流程。")
+            .bind("初始版本")
+            .execute(tx.as_mut())
+            .await?;
+            let version_id = insert_version.last_insert_id() as i64;
+
+            sqlx::query(
+                "UPDATE documents
+                 SET current_version_id = ?, updated_at = UTC_TIMESTAMP()
+                 WHERE document_id = ?",
+            )
+            .bind(version_id)
+            .bind(document_id)
+            .execute(tx.as_mut())
+            .await?;
+
+            Self::replace_document_segments(
+                &mut tx,
+                document_id,
+                version_id,
+                "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。",
+            )
+            .await?;
+
+            Self::replace_document_tags(
+                &mut tx,
+                document_id,
+                &[
+                    "数据库".to_string(),
+                    "权限".to_string(),
+                    "流程".to_string(),
+                ],
+            )
+            .await?;
+            Self::replace_document_faq(
+                &mut tx,
+                document_id,
+                "数据库权限申请流程",
+                "用于说明企业内部数据库权限申请的标准流程。",
+            )
+            .await?;
+            Self::create_agent_run(
+                &mut tx,
+                1,
+                "summary",
+                "document_publish",
+                Some(document_id),
+                Some(version_id),
+                None,
+                None,
+                "success",
+                "数据库权限申请流程",
+                "摘要已生成",
+                Some("{\"source\":\"bootstrap\"}"),
+            )
+            .await?;
+
+            tx.commit().await?;
+        }
+
+        Ok(())
+    }
+
+    async fn backfill_document_segments(&self) -> Result<(), sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT d.document_id, d.current_version_id, dv.content
+             FROM documents d
+             JOIN document_versions dv ON dv.version_id = d.current_version_id
+             WHERE d.status = 'published'
+               AND d.current_version_id IS NOT NULL
+               AND NOT EXISTS (
+                   SELECT 1
+                   FROM document_segments ds
+                   WHERE ds.document_id = d.document_id
+                     AND ds.version_id = d.current_version_id
+               )",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        if rows.is_empty() {
+            return Ok(());
+        }
+
+        let mut tx = self.pool.begin().await?;
+        for row in rows {
+            let document_id = row.get::<i64, _>("document_id");
+            let version_id = row.get::<i64, _>("current_version_id");
+            let content = row
+                .try_get::<Option<String>, _>("content")
+                .ok()
+                .flatten()
+                .unwrap_or_default();
+            Self::replace_document_segments(&mut tx, document_id, version_id, &content).await?;
+        }
+        tx.commit().await?;
         Ok(())
     }
 
@@ -174,25 +300,83 @@ impl MySqlStore {
         operator_user_id: u64,
         agent_type: &str,
         trigger_type: &str,
+        document_id: Option<i64>,
+        version_id: Option<i64>,
+        question_id: Option<i64>,
+        answer_id: Option<i64>,
         status: &str,
         input_text: &str,
         output_text: &str,
-        document_id: Option<i64>,
+        meta_json: Option<&str>,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO agent_runs (
-                agent_type, trigger_type, operator_user_id, document_id, status, input_text, output_text, started_at, finished_at
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())",
+                agent_type, trigger_type, operator_user_id, document_id, version_id, question_id, answer_id, status, input_text, output_text, meta_json, started_at, finished_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())",
         )
         .bind(agent_type)
         .bind(trigger_type)
         .bind(operator_user_id as i64)
         .bind(document_id)
+        .bind(version_id)
+        .bind(question_id)
+        .bind(answer_id)
         .bind(status)
         .bind(input_text)
         .bind(output_text)
+        .bind(meta_json)
         .execute(tx.as_mut())
         .await?;
+
+        Ok(())
+    }
+
+    fn build_segments(content: &str) -> Vec<(u32, String, u32)> {
+        content
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .enumerate()
+            .map(|(index, line)| ((index + 1) as u32, line.to_string(), line.chars().count() as u32))
+            .collect()
+    }
+
+    fn search_score(question: &str, text: &str) -> usize {
+        let normalized_question = question.to_lowercase();
+        let normalized_text = text.to_lowercase();
+        normalized_question
+            .chars()
+            .filter(|ch| !ch.is_whitespace() && !matches!(ch, '，' | '。' | '？' | '?' | '！' | '!' | '、' | ',' | '.'))
+            .filter(|ch| normalized_text.contains(*ch))
+            .count()
+    }
+
+    async fn replace_document_segments(
+        tx: &mut Transaction<'_, MySql>,
+        document_id: i64,
+        version_id: i64,
+        content: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM document_segments WHERE document_id = ? AND version_id = ?")
+            .bind(document_id)
+            .bind(version_id)
+            .execute(tx.as_mut())
+            .await?;
+
+        for (chunk_order, chunk_text, token_count) in Self::build_segments(content) {
+            sqlx::query(
+                "INSERT INTO document_segments (
+                    version_id, document_id, chunk_order, chunk_text, token_count, is_active
+                 ) VALUES (?, ?, ?, ?, ?, 1)",
+            )
+            .bind(version_id)
+            .bind(document_id)
+            .bind(chunk_order as i32)
+            .bind(chunk_text)
+            .bind(token_count as i32)
+            .execute(tx.as_mut())
+            .await?;
+        }
 
         Ok(())
     }
@@ -214,7 +398,7 @@ impl MySqlStore {
 
     async fn load_versions(&self, document_id: i64) -> Result<Vec<DocumentVersion>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT version_id, version_no, title, content, summary, change_note, created_at
+            "SELECT version_id, version_no, source_file_id, title, content, summary, change_note, created_at
              FROM document_versions
              WHERE document_id = ?
              ORDER BY version_id",
@@ -228,6 +412,11 @@ impl MySqlStore {
             .map(|row| DocumentVersion {
                 version_id: row.get::<i64, _>("version_id") as u64,
                 version_no: row.get::<String, _>("version_no"),
+                source_file_id: row
+                    .try_get::<Option<i64>, _>("source_file_id")
+                    .ok()
+                    .flatten()
+                    .map(|value| value as u64),
                 title: row.get::<String, _>("title"),
                 content: row.get::<String, _>("content"),
                 summary: row
@@ -241,6 +430,86 @@ impl MySqlStore {
             .collect())
     }
 
+    async fn load_segments(&self, document_id: i64) -> Result<Vec<DocumentSegment>, sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT segment_id, version_id, document_id, chunk_order, chunk_text, token_count,
+                    CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END AS embedding_status,
+                    created_at
+             FROM document_segments
+             WHERE document_id = ?
+             ORDER BY version_id, chunk_order, segment_id",
+        )
+        .bind(document_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| DocumentSegment {
+                segment_id: row.get::<i64, _>("segment_id") as u64,
+                version_id: row.get::<i64, _>("version_id") as u64,
+                document_id: row.get::<i64, _>("document_id") as u64,
+                chunk_order: row.get::<i32, _>("chunk_order") as u32,
+                chunk_text: row.get::<String, _>("chunk_text"),
+                token_count: row
+                    .try_get::<Option<i32>, _>("token_count")
+                    .ok()
+                    .flatten()
+                    .map(|value| value as u32),
+                embedding_status: row
+                    .try_get::<Option<String>, _>("embedding_status")
+                    .ok()
+                    .flatten()
+                    .unwrap_or_else(|| "inactive".to_string()),
+                created_at: Self::mysql_dt_to_utc(row.get("created_at")),
+            })
+            .collect())
+    }
+
+    async fn load_document_file(&self, file_id: i64) -> Result<Option<DocumentFileMeta>, sqlx::Error> {
+        let row = sqlx::query(
+            "SELECT file_id, object_key, original_name, mime_type, file_size, sha256, created_at
+             FROM document_files
+             WHERE file_id = ?",
+        )
+        .bind(file_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(row.map(|row| DocumentFileMeta {
+            file_id: row.get::<i64, _>("file_id") as u64,
+            object_key: row.get::<String, _>("object_key"),
+            original_name: row.get::<String, _>("original_name"),
+            mime_type: row.get::<String, _>("mime_type"),
+            file_size: row.get::<i64, _>("file_size") as u64,
+            sha256: row.try_get::<Option<String>, _>("sha256").ok().flatten(),
+            created_at: Self::mysql_dt_to_utc(row.get("created_at")),
+        }))
+    }
+
+    async fn load_document_files(&self) -> Result<Vec<DocumentFileMeta>, sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT file_id, object_key, original_name, mime_type, file_size, sha256, created_at
+             FROM document_files
+             ORDER BY created_at DESC, file_id DESC",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| DocumentFileMeta {
+                file_id: row.get::<i64, _>("file_id") as u64,
+                object_key: row.get::<String, _>("object_key"),
+                original_name: row.get::<String, _>("original_name"),
+                mime_type: row.get::<String, _>("mime_type"),
+                file_size: row.get::<i64, _>("file_size") as u64,
+                sha256: row.try_get::<Option<String>, _>("sha256").ok().flatten(),
+                created_at: Self::mysql_dt_to_utc(row.get("created_at")),
+            })
+            .collect())
+    }
+
     async fn load_document_detail_for_user(
         &self,
         user_id: u64,
@@ -248,10 +517,12 @@ impl MySqlStore {
     ) -> Result<Option<DocumentDetail>, sqlx::Error> {
         let row = sqlx::query(
             "SELECT d.document_id, d.title, d.summary, dv.content, c.category_name, d.status, d.current_version_no,
-                    CASE WHEN fr.favorite_id IS NULL THEN 0 ELSE 1 END AS is_favorite
+                    CASE WHEN fr.favorite_id IS NULL THEN 0 ELSE 1 END AS is_favorite,
+                    df.file_id AS source_file_id
              FROM documents d
              JOIN categories c ON d.category_id = c.category_id
              LEFT JOIN document_versions dv ON dv.version_id = d.current_version_id
+             LEFT JOIN document_files df ON d.source_file_id = df.file_id
              LEFT JOIN favorite_records fr ON fr.document_id = d.document_id AND fr.user_id = ?
              WHERE d.document_id = ?",
         )
@@ -266,6 +537,14 @@ impl MySqlStore {
 
         let tags = self.load_tags(document_id).await?;
         let versions = self.load_versions(document_id).await?;
+        let source_file = match row
+            .try_get::<Option<i64>, _>("source_file_id")
+            .ok()
+            .flatten()
+        {
+            Some(file_id) => self.load_document_file(file_id).await?,
+            None => None,
+        };
 
         Ok(Some(DocumentDetail {
             document_id: row.get::<i64, _>("document_id") as u64,
@@ -285,6 +564,7 @@ impl MySqlStore {
             version_no: row.get::<String, _>("current_version_no"),
             is_favorite: row.get::<i8, _>("is_favorite") == 1,
             tags,
+            source_file,
             versions,
         }))
     }
@@ -523,6 +803,48 @@ impl AppStore for MySqlStore {
         self.load_versions(id as i64).await.ok()
     }
 
+    async fn list_document_segments(&self, id: u64) -> Option<Vec<DocumentSegment>> {
+        self.load_segments(id as i64).await.ok()
+    }
+
+    async fn list_document_files(&self) -> Vec<DocumentFileMeta> {
+        self.load_document_files().await.unwrap_or_default()
+    }
+
+    async fn get_document_file(&self, file_id: u64) -> Option<DocumentFileMeta> {
+        self.load_document_file(file_id as i64).await.ok().flatten()
+    }
+
+    async fn register_document_file(
+        &self,
+        _user_id: u64,
+        payload: RegisterDocumentFileRequest,
+    ) -> Result<DocumentFileMeta, StoreMutationError> {
+        let result = sqlx::query(
+            "INSERT INTO document_files (object_key, original_name, mime_type, file_size, sha256)
+             VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind(payload.object_key.unwrap_or_else(|| {
+            format!(
+                "minio/pending/{}-{}",
+                Utc::now().timestamp_millis(),
+                payload.original_name.replace(['\\', '/', ' '], "-")
+            )
+        }))
+        .bind(&payload.original_name)
+        .bind(&payload.mime_type)
+        .bind(payload.file_size as i64)
+        .bind(&payload.sha256)
+        .execute(&self.pool)
+        .await
+        .map_err(|_| StoreMutationError::Conflict)?;
+
+        self.load_document_file(result.last_insert_id() as i64)
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?
+            .ok_or(StoreMutationError::NotFound)
+    }
+
     async fn create_document(&self, user_id: u64, payload: CreateDocumentRequest) -> DocumentDetail {
         let mut tx = self.pool.begin().await.expect("begin create document tx");
         let category_id = Self::ensure_category(&mut tx, &payload.category_name)
@@ -531,13 +853,14 @@ impl AppStore for MySqlStore {
 
         let insert_document = sqlx::query(
             "INSERT INTO documents (
-                category_id, creator_id, current_version_no, title, summary, status, created_at, updated_at
-             ) VALUES (?, ?, 'v1.0.0', ?, ?, 'draft', UTC_TIMESTAMP(), UTC_TIMESTAMP())",
+                category_id, creator_id, current_version_no, title, summary, status, source_file_id, created_at, updated_at
+             ) VALUES (?, ?, 'v1.0.0', ?, ?, 'draft', ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())",
         )
         .bind(category_id)
         .bind(user_id as i64)
         .bind(&payload.title)
         .bind(&payload.summary)
+        .bind(payload.source_file_id.map(|value| value as i64))
         .execute(tx.as_mut())
         .await
         .expect("insert document");
@@ -545,14 +868,15 @@ impl AppStore for MySqlStore {
 
         let insert_version = sqlx::query(
             "INSERT INTO document_versions (
-                document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
-             ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, 0, ?, UTC_TIMESTAMP())",
+                document_id, version_no, title, content, summary, change_note, source_file_id, is_published_snapshot, created_by, created_at
+             ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, ?, 0, ?, UTC_TIMESTAMP())",
         )
         .bind(document_id)
         .bind(&payload.title)
         .bind(&payload.content)
         .bind(&payload.summary)
         .bind(&payload.change_note)
+        .bind(payload.source_file_id.map(|value| value as i64))
         .bind(user_id as i64)
         .execute(tx.as_mut())
         .await
@@ -581,10 +905,14 @@ impl AppStore for MySqlStore {
             user_id,
             "summary",
             "manual",
+            Some(document_id),
+            Some(version_id),
+            None,
+            None,
             "success",
             &payload.title,
             "新文档已写入并生成初始摘要",
-            Some(document_id),
+            Some("{\"stage\":\"create_document\"}"),
         )
         .await
         .expect("create agent run");
@@ -601,6 +929,18 @@ impl AppStore for MySqlStore {
         let document_id = id as i64;
         let mut tx = self.pool.begin().await.ok()?;
         let category_id = Self::ensure_category(&mut tx, &payload.category_name).await.ok()?;
+        let existing_source_file_id = sqlx::query_scalar::<_, i64>(
+            "SELECT source_file_id FROM documents WHERE document_id = ?",
+        )
+        .bind(document_id)
+        .fetch_optional(tx.as_mut())
+        .await
+        .ok()
+        .flatten();
+        let next_source_file_id = payload
+            .source_file_id
+            .map(|value| value as i64)
+            .or(existing_source_file_id);
 
         let version_count = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM document_versions WHERE document_id = ?",
@@ -614,8 +954,8 @@ impl AppStore for MySqlStore {
 
         let version_result = sqlx::query(
             "INSERT INTO document_versions (
-                document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
-             ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, UTC_TIMESTAMP())",
+                document_id, version_no, title, content, summary, change_note, source_file_id, is_published_snapshot, created_by, created_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, UTC_TIMESTAMP())",
         )
         .bind(document_id)
         .bind(&version_no)
@@ -623,6 +963,7 @@ impl AppStore for MySqlStore {
         .bind(&payload.content)
         .bind(&payload.summary)
         .bind(&payload.change_note)
+        .bind(next_source_file_id)
         .bind(user_id as i64)
         .execute(tx.as_mut())
         .await
@@ -631,7 +972,7 @@ impl AppStore for MySqlStore {
 
         sqlx::query(
             "UPDATE documents
-             SET category_id = ?, current_version_id = ?, current_version_no = ?, title = ?, summary = ?, updated_at = UTC_TIMESTAMP()
+             SET category_id = ?, current_version_id = ?, current_version_no = ?, title = ?, summary = ?, source_file_id = ?, updated_at = UTC_TIMESTAMP()
              WHERE document_id = ?",
         )
         .bind(category_id)
@@ -639,6 +980,7 @@ impl AppStore for MySqlStore {
         .bind(&version_no)
         .bind(&payload.title)
         .bind(&payload.summary)
+        .bind(next_source_file_id)
         .bind(document_id)
         .execute(tx.as_mut())
         .await
@@ -653,10 +995,14 @@ impl AppStore for MySqlStore {
             user_id,
             "summary",
             "manual",
+            Some(document_id),
+            Some(version_id),
+            None,
+            None,
             "success",
             &payload.title,
             "文档已更新并生成新版本",
-            Some(document_id),
+            Some(&format!("{{\"version_no\":\"{}\"}}", version_no)),
         )
         .await
         .ok()?;
@@ -668,13 +1014,23 @@ impl AppStore for MySqlStore {
     async fn publish_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail> {
         let document_id = id as i64;
         let mut tx = self.pool.begin().await.ok()?;
-        let row = sqlx::query("SELECT title, current_version_id FROM documents WHERE document_id = ?")
+        let row = sqlx::query(
+            "SELECT d.title, d.current_version_id, dv.content
+             FROM documents d
+             LEFT JOIN document_versions dv ON dv.version_id = d.current_version_id
+             WHERE d.document_id = ?",
+        )
             .bind(document_id)
             .fetch_optional(tx.as_mut())
             .await
             .ok()??;
         let title = row.get::<String, _>("title");
         let current_version_id = row.try_get::<Option<i64>, _>("current_version_id").ok().flatten();
+        let current_content = row
+            .try_get::<Option<String>, _>("content")
+            .ok()
+            .flatten()
+            .unwrap_or_default();
 
         sqlx::query("UPDATE documents SET status = 'published', published_at = UTC_TIMESTAMP(), updated_at = UTC_TIMESTAMP() WHERE document_id = ?")
             .bind(document_id)
@@ -688,6 +1044,9 @@ impl AppStore for MySqlStore {
                 .execute(tx.as_mut())
                 .await
                 .ok()?;
+            Self::replace_document_segments(&mut tx, document_id, version_id, &current_content)
+                .await
+                .ok()?;
         }
 
         Self::create_agent_run(
@@ -695,10 +1054,14 @@ impl AppStore for MySqlStore {
             user_id,
             "audit",
             "document_publish",
+            Some(document_id),
+            current_version_id,
+            None,
+            None,
             "success",
             &title,
             "文档发布成功",
-            Some(document_id),
+            Some("{\"action\":\"publish\"}"),
         )
         .await
         .ok()?;
@@ -728,10 +1091,14 @@ impl AppStore for MySqlStore {
             user_id,
             "audit",
             "manual",
+            Some(document_id),
+            None,
+            None,
+            None,
             "success",
             &title,
             "文档已归档",
-            Some(document_id),
+            Some("{\"action\":\"archive\"}"),
         )
         .await
         .ok()?;
@@ -742,17 +1109,44 @@ impl AppStore for MySqlStore {
 
     async fn ask_question(&self, user_id: u64, question_text: String) -> QaAnswer {
         let mut tx = self.pool.begin().await.expect("begin ask question tx");
-        let doc = sqlx::query(
-            "SELECT d.document_id, d.title, d.current_version_id, d.current_version_no, dv.content
+        let candidate_rows = sqlx::query(
+            "SELECT d.document_id, d.title, d.current_version_id, d.current_version_no, dv.content,
+                    ds.segment_id, ds.chunk_text, ds.chunk_order
              FROM documents d
              LEFT JOIN document_versions dv ON dv.version_id = d.current_version_id
+             LEFT JOIN document_segments ds
+               ON ds.document_id = d.document_id
+              AND ds.version_id = d.current_version_id
              WHERE d.status <> 'archived'
-             ORDER BY d.document_id
-             LIMIT 1",
+             ORDER BY
+               d.document_id DESC,
+               ds.chunk_order ASC",
         )
-        .fetch_optional(tx.as_mut())
+        .fetch_all(tx.as_mut())
         .await
         .expect("load context document");
+        let best_row = candidate_rows
+            .iter()
+            .max_by_key(|row| {
+                let chunk_text = row
+                    .try_get::<Option<String>, _>("chunk_text")
+                    .ok()
+                    .flatten()
+                    .unwrap_or_default();
+                let score = Self::search_score(&question_text, &chunk_text);
+                let segment_priority = row
+                    .try_get::<Option<i64>, _>("segment_id")
+                    .ok()
+                    .flatten()
+                    .map(|_| 1_i64)
+                    .unwrap_or(0);
+                (
+                    score,
+                    segment_priority,
+                    row.get::<i64, _>("document_id"),
+                    -row.try_get::<Option<i32>, _>("chunk_order").ok().flatten().unwrap_or(0) as i64,
+                )
+            });
 
         let answer_text = format!(
             "根据当前知识库，关于“{}”的建议处理方式是：先走标准申请流程，再由对应管理员审核开通。",
@@ -781,7 +1175,7 @@ impl AppStore for MySqlStore {
         let answer_id = insert_answer.last_insert_id() as i64;
 
         let mut citations = Vec::new();
-        if let Some(doc) = doc {
+        if let Some(doc) = best_row {
             let document_id = doc.get::<i64, _>("document_id");
             let document_title = doc.get::<String, _>("title");
             let version_id = doc.try_get::<Option<i64>, _>("current_version_id").ok().flatten().unwrap_or(0);
@@ -795,16 +1189,23 @@ impl AppStore for MySqlStore {
                 .ok()
                 .flatten()
                 .unwrap_or_default();
-            let snippet_text = content.lines().next().unwrap_or_default().to_string();
+            let segment_id = doc.try_get::<Option<i64>, _>("segment_id").ok().flatten();
+            let snippet_text = doc
+                .try_get::<Option<String>, _>("chunk_text")
+                .ok()
+                .flatten()
+                .filter(|value| !value.is_empty())
+                .unwrap_or_else(|| content.lines().next().unwrap_or_default().to_string());
 
             sqlx::query(
                 "INSERT INTO answer_citations (
                     answer_id, document_id, version_id, segment_id, cite_order, score, snippet_text
-                 ) VALUES (?, ?, ?, NULL, 1, 0.92, ?)",
+                 ) VALUES (?, ?, ?, ?, 1, 0.92, ?)",
             )
             .bind(answer_id)
             .bind(document_id)
             .bind(version_id)
+            .bind(segment_id)
             .bind(&snippet_text)
             .execute(tx.as_mut())
             .await
@@ -812,6 +1213,7 @@ impl AppStore for MySqlStore {
 
             citations.push(Citation {
                 cite_order: 1,
+                segment_id: segment_id.map(|value| value as u64),
                 document_title,
                 version_no,
                 snippet_text,
@@ -877,7 +1279,8 @@ impl AppStore for MySqlStore {
 
     async fn list_agent_runs(&self) -> Vec<AgentRun> {
         let rows = sqlx::query(
-            "SELECT run_id, agent_type, trigger_type, status, input_text, output_text, started_at
+            "SELECT run_id, agent_type, trigger_type, document_id, version_id, question_id, answer_id,
+                    status, input_text, output_text, meta_json, started_at, finished_at
              FROM agent_runs
              ORDER BY run_id DESC",
         )
@@ -891,6 +1294,10 @@ impl AppStore for MySqlStore {
                 run_id: row.get::<i64, _>("run_id") as u64,
                 agent_type: row.get::<String, _>("agent_type"),
                 trigger_type: row.get::<String, _>("trigger_type"),
+                document_id: row.try_get::<Option<i64>, _>("document_id").ok().flatten().map(|value| value as u64),
+                version_id: row.try_get::<Option<i64>, _>("version_id").ok().flatten().map(|value| value as u64),
+                question_id: row.try_get::<Option<i64>, _>("question_id").ok().flatten().map(|value| value as u64),
+                answer_id: row.try_get::<Option<i64>, _>("answer_id").ok().flatten().map(|value| value as u64),
                 status: row.get::<String, _>("status"),
                 input_text: row
                     .try_get::<Option<String>, _>("input_text")
@@ -902,7 +1309,13 @@ impl AppStore for MySqlStore {
                     .ok()
                     .flatten()
                     .unwrap_or_default(),
+                meta_json: row.try_get::<Option<String>, _>("meta_json").ok().flatten(),
                 started_at: Self::mysql_dt_to_utc(row.get("started_at")),
+                finished_at: row
+                    .try_get::<Option<chrono::NaiveDateTime>, _>("finished_at")
+                    .ok()
+                    .flatten()
+                    .map(Self::mysql_dt_to_utc),
             })
             .collect()
     }
@@ -1385,6 +1798,57 @@ impl AppStore for MySqlStore {
             .ok_or(StoreMutationError::NotFound)
     }
 
+    async fn reset_user_password(
+        &self,
+        user_id: u64,
+        password: String,
+    ) -> Result<UserItem, StoreMutationError> {
+        let affected = sqlx::query("UPDATE users SET password_hash = ? WHERE user_id = ?")
+            .bind(hash_password(&password))
+            .bind(user_id as i64)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?;
+        if affected.rows_affected() == 0 {
+            return Err(StoreMutationError::NotFound);
+        }
+        self.load_user_by_id(user_id)
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?
+            .ok_or(StoreMutationError::NotFound)
+    }
+
+    async fn delete_user(&self, user_id: u64) -> Result<DeletedResource, StoreMutationError> {
+        if user_id == 1 {
+            return Err(StoreMutationError::Conflict);
+        }
+        let user_id_i64 = user_id as i64;
+        let mut tx = self.pool.begin().await.map_err(|_| StoreMutationError::Conflict)?;
+        sqlx::query("DELETE FROM favorite_records WHERE user_id = ?")
+            .bind(user_id_i64)
+            .execute(tx.as_mut())
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?;
+        sqlx::query("DELETE FROM read_records WHERE user_id = ?")
+            .bind(user_id_i64)
+            .execute(tx.as_mut())
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?;
+        let affected = sqlx::query("DELETE FROM users WHERE user_id = ?")
+            .bind(user_id_i64)
+            .execute(tx.as_mut())
+            .await
+            .map_err(|_| StoreMutationError::Conflict)?;
+        if affected.rows_affected() == 0 {
+            return Err(StoreMutationError::NotFound);
+        }
+        tx.commit().await.map_err(|_| StoreMutationError::Conflict)?;
+        Ok(DeletedResource {
+            resource_type: "user".to_string(),
+            resource_key: user_id.to_string(),
+        })
+    }
+
     async fn list_favorite_documents(&self, user_id: u64) -> Vec<FavoriteDocumentItem> {
         let rows = sqlx::query(
             "SELECT d.document_id, d.title, c.category_name, d.status, d.current_version_no, f.favorite_time
@@ -1520,5 +1984,48 @@ impl AppStore for MySqlStore {
             document_id: id,
             is_favorite,
         })
+    }
+
+    async fn reindex_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail> {
+        let document_id = id as i64;
+        let mut tx = self.pool.begin().await.ok()?;
+        let row = sqlx::query(
+            "SELECT d.title, d.current_version_id, dv.content
+             FROM documents d
+             LEFT JOIN document_versions dv ON dv.version_id = d.current_version_id
+             WHERE d.document_id = ?",
+        )
+        .bind(document_id)
+        .fetch_optional(tx.as_mut())
+        .await
+        .ok()??;
+        let title = row.get::<String, _>("title");
+        let version_id = row.try_get::<Option<i64>, _>("current_version_id").ok().flatten()?;
+        let content = row
+            .try_get::<Option<String>, _>("content")
+            .ok()
+            .flatten()
+            .unwrap_or_default();
+        Self::replace_document_segments(&mut tx, document_id, version_id, &content)
+            .await
+            .ok()?;
+        Self::create_agent_run(
+            &mut tx,
+            user_id,
+            "index",
+            "document_reindex",
+            Some(document_id),
+            Some(version_id),
+            None,
+            None,
+            "success",
+            &title,
+            "文档分段已重建",
+            Some("{\"action\":\"reindex\"}"),
+        )
+        .await
+        .ok()?;
+        tx.commit().await.ok()?;
+        self.load_document_detail_for_user(user_id, document_id).await.ok().flatten()
     }
 }

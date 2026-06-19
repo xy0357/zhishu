@@ -18,6 +18,10 @@ Content-Type: application/json
 GET http://127.0.0.1:8080/api/auth/me
 Authorization: Bearer <ACCESS_TOKEN>
 
+### 刷新令牌
+POST http://127.0.0.1:8080/api/auth/refresh
+Authorization: Bearer <ACCESS_TOKEN>
+
 ### 首页看板
 GET http://127.0.0.1:8080/api/dashboard
 Authorization: Bearer <ACCESS_TOKEN>
@@ -112,6 +116,19 @@ Authorization: Bearer <ACCESS_TOKEN>
   "password": "Viewer@654321"
 }
 
+### 重置用户密码
+POST http://127.0.0.1:8080/api/users/3/reset-password
+Content-Type: application/json
+Authorization: Bearer <ACCESS_TOKEN>
+
+{
+  "password": "Viewer@654321"
+}
+
+### 删除用户
+DELETE http://127.0.0.1:8080/api/users/3
+Authorization: Bearer <ACCESS_TOKEN>
+
 ### 收藏列表
 GET http://127.0.0.1:8080/api/favorites
 Authorization: Bearer <ACCESS_TOKEN>
@@ -126,6 +143,10 @@ Authorization: Bearer <ACCESS_TOKEN>
 
 ### 文档详情
 GET http://127.0.0.1:8080/api/documents/1
+Authorization: Bearer <ACCESS_TOKEN>
+
+### 文档分段
+GET http://127.0.0.1:8080/api/documents/1/segments
 Authorization: Bearer <ACCESS_TOKEN>
 
 ### 文档 FAQ
@@ -182,6 +203,10 @@ Authorization: Bearer <ACCESS_TOKEN>
 POST http://127.0.0.1:8080/api/documents/1/publish
 Authorization: Bearer <ACCESS_TOKEN>
 
+### 重建文档分段
+POST http://127.0.0.1:8080/api/documents/1/reindex
+Authorization: Bearer <ACCESS_TOKEN>
+
 ### 更新文档并生成新版本
 PUT http://127.0.0.1:8080/api/documents/1
 Content-Type: application/json
@@ -216,3 +241,35 @@ Authorization: Bearer <ACCESS_TOKEN>
 ### 问答历史
 GET http://127.0.0.1:8080/api/questions/history
 Authorization: Bearer <ACCESS_TOKEN>
+
+### Qdrant 创建 demo collection（可选）
+PUT http://127.0.0.1:6333/collections/zhishu_segments_demo
+Content-Type: application/json
+
+{
+  "vectors": {
+    "size": 8,
+    "distance": "Cosine"
+  }
+}
+
+### Qdrant upsert demo points（可选）
+# 先执行 infra/scripts/export-qdrant-demo-points.ps1 生成 artifacts/qdrant-demo-points.json，
+# 再将 points 数组复制到下方请求体中，或直接执行 infra/scripts/sync-qdrant-demo.ps1。
+PUT http://127.0.0.1:6333/collections/zhishu_segments_demo/points?wait=true
+Content-Type: application/json
+
+{
+  "points": []
+}
+
+### Qdrant demo 查询（可选）
+POST http://127.0.0.1:6333/collections/zhishu_segments_demo/points/query
+Content-Type: application/json
+
+{
+  "query": [0.2, 0.1, 0.9, 0.7, 0.3, 0.4, 0.2, 0.6],
+  "limit": 3,
+  "with_payload": true,
+  "with_vector": false
+}

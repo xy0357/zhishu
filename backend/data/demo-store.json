@@ -14,10 +14,12 @@
         "权限",
         "流程"
       ],
+      "source_file": null,
       "versions": [
         {
           "version_id": 1,
           "version_no": "v1.0.0",
+          "source_file_id": null,
           "title": "数据库权限申请流程",
           "content": "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。",
           "summary": "用于说明企业内部数据库权限申请的标准流程。",
@@ -27,6 +29,39 @@
       ]
     }
   ],
+  "document_segments": [
+    {
+      "segment_id": 1,
+      "version_id": 1,
+      "document_id": 1,
+      "chunk_order": 1,
+      "chunk_text": "1. 提交权限申请单。",
+      "token_count": 11,
+      "embedding_status": "pending",
+      "created_at": "2026-06-01T09:00:00Z"
+    },
+    {
+      "segment_id": 2,
+      "version_id": 1,
+      "document_id": 1,
+      "chunk_order": 2,
+      "chunk_text": "2. 直属主管审批。",
+      "token_count": 10,
+      "embedding_status": "pending",
+      "created_at": "2026-06-01T09:00:00Z"
+    },
+    {
+      "segment_id": 3,
+      "version_id": 1,
+      "document_id": 1,
+      "chunk_order": 3,
+      "chunk_text": "3. DBA 审核后开通只读账号。",
+      "token_count": 17,
+      "embedding_status": "pending",
+      "created_at": "2026-06-01T09:00:00Z"
+    }
+  ],
+  "document_files": [],
   "managed_categories": [
     {
       "category_name": "制度流程",
@@ -119,6 +154,8 @@
   "next_document_id": 2,
   "next_user_id": 3,
   "next_version_id": 2,
+  "next_segment_id": 4,
+  "next_file_id": 2,
   "next_faq_id": 2,
   "next_read_id": 1,
   "next_question_id": 1,

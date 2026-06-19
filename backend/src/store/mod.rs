@@ -2,11 +2,11 @@ use async_trait::async_trait;
 use std::sync::Arc;
 
 use crate::models::{
-    AgentRun, CategoryItem, CategoryUpsertRequest, CreateDocumentRequest,
-    DashboardSummary, DeletedResource, DocumentDetail, DocumentListItem, DocumentVersion, FaqItem,
-    FaqUpsertRequest, FavoriteDocumentItem, FavoriteState, QaAnswer, QuestionHistoryItem,
-    ReadRecordItem, RoleItem, TagItem, TagUpsertRequest, UpdateDocumentRequest, UserCreateRequest,
-    UserItem, UserUpdateRequest,
+    AgentRun, CategoryItem, CategoryUpsertRequest, CreateDocumentRequest, DashboardSummary,
+    DeletedResource, DocumentDetail, DocumentFileMeta, DocumentListItem, DocumentSegment,
+    DocumentVersion, FaqItem, FaqUpsertRequest, FavoriteDocumentItem, FavoriteState, QaAnswer,
+    QuestionHistoryItem, ReadRecordItem, RegisterDocumentFileRequest, RoleItem, TagItem, TagUpsertRequest,
+    UpdateDocumentRequest, UserCreateRequest, UserItem, UserUpdateRequest,
 };
 
 pub mod memory;
@@ -28,6 +28,14 @@ pub trait AppStore: Send + Sync {
     async fn list_documents(&self, user_id: u64) -> Vec<DocumentListItem>;
     async fn get_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail>;
     async fn get_versions(&self, id: u64) -> Option<Vec<DocumentVersion>>;
+    async fn list_document_segments(&self, id: u64) -> Option<Vec<DocumentSegment>>;
+    async fn list_document_files(&self) -> Vec<DocumentFileMeta>;
+    async fn get_document_file(&self, file_id: u64) -> Option<DocumentFileMeta>;
+    async fn register_document_file(
+        &self,
+        user_id: u64,
+        payload: RegisterDocumentFileRequest,
+    ) -> Result<DocumentFileMeta, StoreMutationError>;
     async fn create_document(&self, user_id: u64, payload: CreateDocumentRequest) -> DocumentDetail;
     async fn update_document(
         &self,
@@ -77,8 +85,15 @@ pub trait AppStore: Send + Sync {
         user_id: u64,
         payload: UserUpdateRequest,
     ) -> Result<UserItem, StoreMutationError>;
+    async fn reset_user_password(
+        &self,
+        user_id: u64,
+        password: String,
+    ) -> Result<UserItem, StoreMutationError>;
+    async fn delete_user(&self, user_id: u64) -> Result<DeletedResource, StoreMutationError>;
     async fn list_favorite_documents(&self, user_id: u64) -> Vec<FavoriteDocumentItem>;
     async fn list_recent_reads(&self, user_id: u64) -> Vec<ReadRecordItem>;
     async fn record_document_read(&self, user_id: u64, id: u64) -> Option<ReadRecordItem>;
     async fn toggle_favorite_document(&self, user_id: u64, id: u64) -> Option<FavoriteState>;
+    async fn reindex_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail>;
 }

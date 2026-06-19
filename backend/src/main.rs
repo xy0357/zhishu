@@ -1,6 +1,8 @@
 mod app;
 mod config;
 mod models;
+mod object_storage;
+mod redis_cache;
 mod routes;
 mod security;
 mod store;

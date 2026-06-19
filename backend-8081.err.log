@@ -1,0 +1,7 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `target\debug\zhishu-backend.exe`
+
+thread 'main' (18112) panicked at src\main.rs:40:62:
+bind server: Os { code: 10048, kind: AddrInUse, message: "通常每个套接字地址(协议/网络地址/端口)只允许使用一次。" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\zhishu-backend.exe` (exit code: 101)

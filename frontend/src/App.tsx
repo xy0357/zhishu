@@ -6,9 +6,12 @@ import type {
   CategoryItem,
   CategoryFormPayload,
   DashboardSummary,
+  HealthStatus,
   DocumentDetail,
+  DocumentFileMeta,
   DocumentFormPayload,
   DocumentListItem,
+  DocumentSegment,
   FaqItem,
   FaqFormPayload,
   FavoriteDocumentItem,
@@ -32,6 +35,45 @@ const emptySummary: DashboardSummary = {
   published_documents: 0,
   total_questions: 0,
   total_agent_runs: 0
+};
+
+const emptyHealth: HealthStatus = {
+  service: "zhishu-backend",
+  status: "unknown",
+  storage_backend: "file",
+  route_profile: "file",
+  dependencies: {
+    mysql: {
+      configured: "",
+      host: "127.0.0.1",
+      port: 3306,
+      required: false,
+      reachable: false
+    },
+    redis: {
+      configured: "",
+      host: "127.0.0.1",
+      port: 6379,
+      required: false,
+      reachable: false
+    },
+    qdrant: {
+      configured: "",
+      host: "127.0.0.1",
+      port: 6333,
+      required: false,
+      reachable: false
+    },
+    minio: {
+      configured: "",
+      host: "127.0.0.1",
+      port: 9000,
+      required: false,
+      reachable: false,
+      bucket: "",
+      mode: ""
+    }
+  }
 };
 
 const emptyForm: DocumentFormPayload = {
@@ -66,11 +108,14 @@ const emptyUserForm: UserCreatePayload = {
   password: ""
 };
 
+const dependencyOrder = ["mysql", "redis", "qdrant", "minio"] as const;
+
 export default function App() {
   const [view, setView] = useState<ViewKey>("dashboard");
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<DocumentDetail | null>(null);
   const [dashboard, setDashboard] = useState<DashboardSummary>(emptySummary);
+  const [health, setHealth] = useState<HealthStatus>(emptyHealth);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
@@ -78,8 +123,10 @@ export default function App() {
   const [favoriteDocuments, setFavoriteDocuments] = useState<FavoriteDocumentItem[]>([]);
   const [recentReads, setRecentReads] = useState<ReadRecordItem[]>([]);
   const [documentFaqs, setDocumentFaqs] = useState<FaqItem[]>([]);
+  const [documentSegments, setDocumentSegments] = useState<DocumentSegment[]>([]);
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
   const [questionHistory, setQuestionHistory] = useState<QuestionHistoryItem[]>([]);
+  const [documentFiles, setDocumentFiles] = useState<DocumentFileMeta[]>([]);
   const [questionText, setQuestionText] = useState("如何申请数据库权限？");
   const [answer, setAnswer] = useState<QaAnswer | null>(null);
   const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
@@ -102,12 +149,19 @@ export default function App() {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [passwordResetValue, setPasswordResetValue] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const canManageTaxonomy = currentUser?.role_name === "系统管理员";
   const canManageContent = currentUser ? ["系统管理员", "知识管理员"].includes(currentUser.role_name) : false;
   const canViewUsers = currentUser?.role_name === "系统管理员";
   const canViewAgentRuns = currentUser?.role_name === "系统管理员";
+  const dependencyCards = dependencyOrder.map((key) => ({
+    key,
+    label: key.toUpperCase(),
+    item: health.dependencies[key]
+  }));
 
   useEffect(() => {
     void initializeSession();
@@ -133,7 +187,9 @@ export default function App() {
       const activeUser = userOverride ?? currentUser;
       const shouldLoadUsers = activeUser?.role_name === "系统管理员";
       const shouldLoadAgentRuns = activeUser?.role_name === "系统管理员";
-      const [dashboardData, categoryData, tagData, favoriteData, recentReadData, documentData, questionHistoryData] = await Promise.all([
+      const shouldLoadDocumentFiles = !!activeUser && ["系统管理员", "知识管理员"].includes(activeUser.role_name);
+      const [healthData, dashboardData, categoryData, tagData, favoriteData, recentReadData, documentData, questionHistoryData] = await Promise.all([
+        api.getHealth(),
         api.getDashboard(),
         api.getCategories(),
         api.getTags(),
@@ -148,7 +204,9 @@ export default function App() {
         shouldLoadUsers ? api.getUsers() : Promise.resolve([]),
         shouldLoadAgentRuns ? api.getAgentRuns() : Promise.resolve([])
       ]);
+      const fileData = shouldLoadDocumentFiles ? await api.getDocumentFiles() : [];
 
+      setHealth(healthData);
       setDashboard(dashboardData);
       setCategories(categoryData);
       setTags(tagData);
@@ -159,18 +217,22 @@ export default function App() {
       setDocuments(documentData);
       setAgentRuns(agentData);
       setQuestionHistory(questionHistoryData);
+      setDocumentFiles(fileData);
 
       const documentId = preferredDocumentId ?? documentData[0]?.document_id;
       if (documentId) {
-        const [detail, faqs] = await Promise.all([
+        const [detail, faqs, segments] = await Promise.all([
           api.getDocument(documentId),
-          api.getDocumentFaqs(documentId)
+          api.getDocumentFaqs(documentId),
+          api.getDocumentSegments(documentId)
         ]);
         setSelectedDocument(detail);
         setDocumentFaqs(faqs);
+        setDocumentSegments(segments);
       } else {
         setSelectedDocument(null);
         setDocumentFaqs([]);
+        setDocumentSegments([]);
       }
       setError(null);
     } catch (err) {
@@ -233,14 +295,16 @@ export default function App() {
   async function openDocument(documentId: number) {
     try {
       await api.recordDocumentRead(documentId);
-      const [detail, faqs, latestReads] = await Promise.all([
+      const [detail, faqs, latestReads, segments] = await Promise.all([
         api.getDocument(documentId),
         api.getDocumentFaqs(documentId),
-        api.getRecentReads()
+        api.getRecentReads(),
+        api.getDocumentSegments(documentId)
       ]);
       setSelectedDocument(detail);
       setDocumentFaqs(faqs);
       setRecentReads(latestReads);
+      setDocumentSegments(segments);
       applyDocumentToForm(detail);
       setView("documents");
     } catch (err) {
@@ -285,6 +349,45 @@ export default function App() {
     }));
   }
 
+  async function uploadSourceFile(file: File) {
+    try {
+      setUploadingFile(true);
+      const uploaded: DocumentFileMeta = await api.uploadDocumentFile(file);
+      setDocumentForm((prev) => ({ ...prev, source_file_id: uploaded.file_id }));
+      setDocumentFiles((prev) => [uploaded, ...prev.filter((item) => item.file_id !== uploaded.file_id)]);
+      setSelectedDocument((prev) =>
+        prev
+          ? {
+              ...prev,
+              source_file: uploaded
+            }
+          : prev
+      );
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "文件上传失败");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  async function downloadSourceFile(file: DocumentFileMeta) {
+    try {
+      const blob = await api.downloadDocumentFile(file.file_id);
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.original_name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "文件下载失败");
+    }
+  }
+
   function beginEditUser(user: UserItem) {
     setUserForm({
       username: user.username,
@@ -319,6 +422,7 @@ export default function App() {
         await api.createUser(userForm);
       }
       resetUserForm();
+      setPasswordResetValue("");
       await bootstrap(selectedDocument?.document_id);
       setView("people");
     } catch (err) {
@@ -402,6 +506,59 @@ export default function App() {
       await bootstrap(selectedDocument?.document_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "问答请求失败");
+    }
+  }
+
+  async function refreshSession() {
+    try {
+      const session = await api.refreshSession();
+      setAuthToken(session.access_token);
+      setError(null);
+    } catch (err) {
+      clearAuthToken();
+      setCurrentUser(null);
+      setError(err instanceof Error ? err.message : "刷新登录态失败");
+    }
+  }
+
+  async function resetSelectedUserPassword(userId: number) {
+    try {
+      if (!passwordResetValue.trim()) {
+        setError("请先输入重置后的密码");
+        return;
+      }
+      await api.resetUserPassword(userId, { password: passwordResetValue });
+      setPasswordResetValue("");
+      await bootstrap(selectedDocument?.document_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "密码重置失败");
+    }
+  }
+
+  async function deleteManagedUser(userId: number) {
+    try {
+      await api.deleteUser(userId);
+      if (editingUserId === userId) {
+        resetUserForm();
+      }
+      await bootstrap(selectedDocument?.document_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "用户删除失败");
+    }
+  }
+
+  async function reindexCurrentDocument() {
+    if (!selectedDocument) {
+      return;
+    }
+    try {
+      const detail = await api.reindexDocument(selectedDocument.document_id);
+      setSelectedDocument(detail);
+      const segments = await api.getDocumentSegments(detail.document_id);
+      setDocumentSegments(segments);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "重建分段失败");
     }
   }
 
@@ -585,7 +742,7 @@ export default function App() {
         <header className="header">
           <div>
             <h2>可交付 MVP+</h2>
-            <p>在文档、版本、问答和 Agent 留痕基础上，继续补齐了分类、标签与 FAQ 的管理能力。</p>
+            <p>围绕 MySQL 主链路，串起文档管理、问答检索、对象镜像和向量演示的数据库课程答辩 Demo。</p>
           </div>
           <div className="header-actions">
             <div className="user-badge">
@@ -598,6 +755,9 @@ export default function App() {
             <button className="ghost" onClick={() => void bootstrap(selectedDocument?.document_id)}>
               刷新数据
             </button>
+            <button className="ghost" onClick={() => void refreshSession()}>
+              刷新令牌
+            </button>
             <button className="ghost" onClick={logout}>
               退出登录
             </button>
@@ -609,11 +769,44 @@ export default function App() {
 
         {!loading && view === "dashboard" ? (
           <>
+            <section className="panel hero-panel">
+              <div className="hero-copy">
+                <span className="hero-kicker">数据库系统课程演示</span>
+                <h3>这不是单纯的前端页面，而是一套可运行的知识库数据闭环</h3>
+                <p>
+                  前台展示的是知识检索体验，背后重点演示的是关系型数据库落库、文档版本化、分段索引、
+                  问答引用和 Agent 留痕这几条核心数据链路。
+                </p>
+              </div>
+              <div className="hero-metrics">
+                <div className="hero-metric">
+                  <span>主存储</span>
+                  <strong>{health.storage_backend.toUpperCase()}</strong>
+                  <small>{health.dependencies.mysql.reachable ? "MySQL 已连通" : "MySQL 待连接"}</small>
+                </div>
+                <div className="hero-metric">
+                  <span>部署路线</span>
+                  <strong>{health.route_profile.toUpperCase()}</strong>
+                  <small>当前以本地可演示为目标</small>
+                </div>
+                <div className="hero-metric">
+                  <span>检索增强</span>
+                  <strong>{health.dependencies.qdrant.reachable ? "QDRANT" : "DEMO HASH"}</strong>
+                  <small>{health.dependencies.qdrant.reachable ? "向量检索已打通" : "可先演示基础问答链路"}</small>
+                </div>
+              </div>
+              <div className="hero-tags">
+                <span className="tag">文档版本管理</span>
+                <span className="tag">FAQ 主数据</span>
+                <span className="tag">问答引用证据</span>
+                <span className="tag">Agent 运行留痕</span>
+              </div>
+            </section>
             <section className="dashboard-grid">
-              <SummaryCard label="文档总量" value={dashboard.total_documents} />
-              <SummaryCard label="已发布文档" value={dashboard.published_documents} />
-              <SummaryCard label="累计问答" value={dashboard.total_questions} />
-              <SummaryCard label="Agent 运行数" value={dashboard.total_agent_runs} />
+              <SummaryCard label="文档总量" value={dashboard.total_documents} hint="知识资产主表规模" />
+              <SummaryCard label="已发布文档" value={dashboard.published_documents} hint="可被检索与问答消费" />
+              <SummaryCard label="累计问答" value={dashboard.total_questions} hint="问题与答案链路沉淀" />
+              <SummaryCard label="Agent 运行数" value={dashboard.total_agent_runs} hint="自动化处理审计轨迹" />
             </section>
             <section className="content-layout dashboard-detail-layout">
               <div className="panel">
@@ -642,6 +835,50 @@ export default function App() {
                     <span className="tag large" key={item.tag_name}>
                       {item.tag_name} · {item.document_count}
                     </span>
+                  ))}
+                </div>
+              </div>
+            </section>
+            <section className="content-layout dashboard-detail-layout">
+              <div className="panel">
+                <div className="panel-title">
+                  <h3>数据库展示重点</h3>
+                  <span>答辩建议从这里讲</span>
+                </div>
+                <div className="history-list">
+                  <div className="history-item emphasis-item">
+                    <strong>1. 文档不是一张表结束，而是版本化管理</strong>
+                    <p>每次修改都会形成新的版本记录，便于追踪知识演进，体现数据库对历史状态的管理能力。</p>
+                  </div>
+                  <div className="history-item emphasis-item">
+                    <strong>2. 问答结果不是黑盒，能回溯到片段与来源</strong>
+                    <p>回答会绑定引用证据和 segment_id，说明检索结果可以被解释、被审计、被复查。</p>
+                  </div>
+                  <div className="history-item emphasis-item">
+                    <strong>3. Agent 运行过程也落库</strong>
+                    <p>摘要、问答、审计等自动任务都会留下运行记录，方便后续统计、排障和行为分析。</p>
+                  </div>
+                </div>
+              </div>
+              <div className="panel">
+                <div className="panel-title">
+                  <h3>依赖总览</h3>
+                  <span>面向演示的运行状态</span>
+                </div>
+                <div className="dependency-grid">
+                  {dependencyCards.map(({ key, label, item }) => (
+                    <div className="dependency-card" key={key}>
+                      <div className="dependency-head">
+                        <strong>{label}</strong>
+                        <span className={item.reachable ? "status-pill online" : "status-pill offline"}>
+                          {item.reachable ? "在线" : item.required ? "待处理" : "可选"}
+                        </span>
+                      </div>
+                      <p>
+                        {item.host}:{item.port}
+                      </p>
+                      <small>{item.required ? "主链路依赖" : "增强能力依赖"}</small>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -682,6 +919,9 @@ export default function App() {
                       </button>
                       <button className={selectedDocument.is_favorite ? "warning" : "ghost"} onClick={() => void toggleFavoriteCurrentDocument()}>
                         {selectedDocument.is_favorite ? "取消收藏" : "加入收藏"}
+                      </button>
+                      <button className="ghost" onClick={() => void reindexCurrentDocument()}>
+                        重建分段
                       </button>
                       {canManageContent ? (
                         <>
@@ -740,6 +980,42 @@ export default function App() {
                     onChange={(event) => setDocumentForm((prev) => ({ ...prev, change_note: event.target.value }))}
                   />
                 </label>
+                <label className="full">
+                  <span>原始文件</span>
+                  <select
+                    value={documentForm.source_file_id ?? ""}
+                    onChange={(event) =>
+                      setDocumentForm((prev) => ({
+                        ...prev,
+                        source_file_id: event.target.value ? Number(event.target.value) : undefined
+                      }))
+                    }
+                  >
+                    <option value="">不绑定原始文件</option>
+                    {documentFiles.map((file) => (
+                      <option key={file.file_id} value={file.file_id}>
+                        {file.original_name} · ID {file.file_id}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="file"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        void uploadSourceFile(file);
+                      }
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <small>
+                    {uploadingFile
+                      ? "正在上传文件..."
+                      : documentForm.source_file_id
+                        ? `已挂接源文件 ID：${documentForm.source_file_id}`
+                        : "当前未挂接原始文件"}
+                  </small>
+                </label>
               </div>
 
               <div className="form-actions">
@@ -764,6 +1040,24 @@ export default function App() {
                   <article className="article-card">
                     <h4>当前摘要</h4>
                     <p>{selectedDocument.summary}</p>
+                    <h4>原始文件</h4>
+                    {selectedDocument.source_file ? (
+                      <>
+                        <p>
+                          {`${selectedDocument.source_file.original_name} · ${selectedDocument.source_file.mime_type} · ${selectedDocument.source_file.file_size} bytes · ${selectedDocument.source_file.object_key}`}
+                        </p>
+                        <div className="inline-actions">
+                          <button
+                            className="ghost"
+                            onClick={() => void downloadSourceFile(selectedDocument.source_file!)}
+                          >
+                            下载原始文件
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p>当前文档未绑定原始文件</p>
+                    )}
                     <h4>当前正文</h4>
                     <pre>{selectedDocument.content}</pre>
                   </article>
@@ -773,9 +1067,25 @@ export default function App() {
                       <div className="version-item" key={version.version_id}>
                         <strong>{version.version_no}</strong>
                         <span>{version.change_note}</span>
+                        <small>{version.source_file_id ? `源文件ID ${version.source_file_id}` : "无源文件"}</small>
                         <small>{new Date(version.created_at).toLocaleString("zh-CN")}</small>
                       </div>
                     ))}
+                  </section>
+                  <section className="version-list">
+                    <h4>当前分段</h4>
+                    {documentSegments.length ? (
+                      documentSegments.map((segment) => (
+                        <div className="version-item" key={segment.segment_id}>
+                          <strong>{`片段 #${segment.chunk_order}`}</strong>
+                          <span>{segment.embedding_status}</span>
+                          <p>{segment.chunk_text}</p>
+                          <small>{`segment_id ${segment.segment_id} · version_id ${segment.version_id}`}</small>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-state">当前文档还没有可展示的分段</div>
+                    )}
                   </section>
                   <section className="version-list">
                     <h4>FAQ 条目</h4>
@@ -818,7 +1128,9 @@ export default function App() {
                     {answer.citations.map((citation) => (
                       <div className="citation-item" key={citation.cite_order}>
                         <strong>{citation.document_title}</strong>
-                        <span>{citation.version_no} · 得分 {citation.score}</span>
+                        <span>
+                          {citation.version_no} · 得分 {citation.score} · {citation.segment_id ? `片段ID ${citation.segment_id}` : "无片段ID"}
+                        </span>
                         <p>{citation.snippet_text}</p>
                       </div>
                     ))}
@@ -922,10 +1234,29 @@ export default function App() {
                         <strong>{item.username}</strong>
                         <p>{item.role_name} · {item.department || "未分配部门"}</p>
                         <small>{item.email || "未配置邮箱"}</small>
+                        <input
+                          className="compact-input"
+                          type="password"
+                          placeholder="重置密码"
+                          value={editingUserId === item.user_id ? passwordResetValue : ""}
+                          onFocus={() => setEditingUserId(item.user_id)}
+                          onChange={(event) => {
+                            setEditingUserId(item.user_id);
+                            setPasswordResetValue(event.target.value);
+                          }}
+                        />
                         <div className="inline-actions">
                           <button className="ghost" onClick={() => beginEditUser(item)}>
                             编辑
                           </button>
+                          <button className="ghost" onClick={() => void resetSelectedUserPassword(item.user_id)}>
+                            重置密码
+                          </button>
+                          {item.user_id !== currentUser?.user_id ? (
+                            <button className="danger" onClick={() => void deleteManagedUser(item.user_id)}>
+                              删除
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     ))}
@@ -972,6 +1303,36 @@ export default function App() {
 
         {!loading && view === "manage" && canManageContent ? (
           <section className="content-layout people-layout">
+            <div className="panel">
+              <div className="panel-title">
+                <h3>依赖状态</h3>
+                <span>{health.storage_backend} / {health.route_profile}</span>
+              </div>
+              <div className="dependency-grid">
+                {dependencyCards.map(({ key, label, item }) => {
+                   return (
+                    <div className="dependency-card detail" key={key}>
+                      <div className="dependency-head">
+                        <strong>{label}</strong>
+                        <span className={item.reachable ? "status-pill online" : "status-pill offline"}>
+                          {item.reachable ? "已连通" : item.required ? "未连通" : "增强项"}
+                        </span>
+                      </div>
+                      <p>
+                        {item.required ? "当前主链路依赖" : "当前增强依赖"}
+                      </p>
+                      <small>
+                        {item.host}:{item.port}
+                        {key === "minio" && item.bucket ? ` · bucket ${item.bucket}` : ""}
+                        {key === "minio" && item.mode ? ` · ${item.mode}` : ""}
+                      </small>
+                      <small>{item.configured}</small>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {canManageTaxonomy ? (
               <>
                 <div className="panel">
@@ -1179,12 +1540,26 @@ export default function App() {
                   <div>
                     <strong>{run.agent_type}</strong>
                     <p>{run.trigger_type} · {run.status}</p>
+                    <small>
+                      {[
+                        run.document_id ? `文档 ${run.document_id}` : "",
+                        run.version_id ? `版本 ${run.version_id}` : "",
+                        run.question_id ? `问题 ${run.question_id}` : "",
+                        run.answer_id ? `回答 ${run.answer_id}` : ""
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "无上下文主键"}
+                    </small>
                   </div>
                   <div>
                     <p>{run.input_text}</p>
                     <small>{run.output_text}</small>
+                    {run.meta_json ? <small>{run.meta_json}</small> : null}
                   </div>
-                  <small>{new Date(run.started_at).toLocaleString("zh-CN")}</small>
+                  <small>
+                    {new Date(run.started_at).toLocaleString("zh-CN")}
+                    {run.finished_at ? ` → ${new Date(run.finished_at).toLocaleString("zh-CN")}` : ""}
+                  </small>
                 </div>
               ))}
             </div>
@@ -1195,11 +1570,12 @@ export default function App() {
   );
 }
 
-function SummaryCard(props: { label: string; value: number }) {
+function SummaryCard(props: { label: string; value: number; hint: string }) {
   return (
     <div className="summary-card">
       <span>{props.label}</span>
       <strong>{props.value}</strong>
+      <small>{props.hint}</small>
     </div>
   );
 }

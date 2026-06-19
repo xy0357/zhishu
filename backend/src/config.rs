@@ -8,6 +8,13 @@ pub struct AppConfig {
     pub storage_backend: String,
     pub storage_file: String,
     pub mysql_url: String,
+    pub redis_url: String,
+    pub qdrant_url: String,
+    #[allow(dead_code)]
+    pub minio_endpoint: String,
+    #[allow(dead_code)]
+    pub minio_bucket: String,
+    pub object_storage_dir: String,
     pub access_token_secret: String,
     pub access_token_ttl_hours: i64,
 }
@@ -27,6 +34,16 @@ impl AppConfig {
                 .unwrap_or_else(|_| "data/demo-store.json".to_string()),
             mysql_url: env::var("MYSQL_URL")
                 .unwrap_or_else(|_| "mysql://zhishu:zhishu@127.0.0.1:3306/zhishu".to_string()),
+            redis_url: env::var("REDIS_URL")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+            qdrant_url: env::var("QDRANT_URL")
+                .unwrap_or_else(|_| "http://127.0.0.1:6333".to_string()),
+            minio_endpoint: env::var("MINIO_ENDPOINT")
+                .unwrap_or_else(|_| "http://127.0.0.1:9000".to_string()),
+            minio_bucket: env::var("MINIO_BUCKET")
+                .unwrap_or_else(|_| "zhishu-documents".to_string()),
+            object_storage_dir: env::var("OBJECT_STORAGE_DIR")
+                .unwrap_or_else(|_| "data/object-storage".to_string()),
             access_token_secret: env::var("APP_ACCESS_TOKEN_SECRET")
                 .unwrap_or_else(|_| "zhishu-dev-secret-change-me".to_string()),
             access_token_ttl_hours: env::var("APP_ACCESS_TOKEN_TTL_HOURS")

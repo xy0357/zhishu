@@ -11,6 +11,29 @@ $checks = @(
     @{ Name = "mysql"; Command = "mysql"; Args = @("--version") }
 )
 
+function Test-TcpEndpoint {
+    param(
+        [string]$HostName,
+        [int]$Port
+    )
+
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $asyncResult = $client.BeginConnect($HostName, $Port, $null, $null)
+        if (-not $asyncResult.AsyncWaitHandle.WaitOne(800)) {
+            return $false
+        }
+        $client.EndConnect($asyncResult) | Out-Null
+        return $true
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
 $results = foreach ($check in $checks) {
     $command = Get-Command $check.Command -ErrorAction SilentlyContinue
     if (-not $command) {
@@ -36,6 +59,24 @@ $results = foreach ($check in $checks) {
 }
 
 $results | Format-Table -AutoSize
+
+$servicePorts = @(
+    @{ Name = "mysql:3306"; Host = "127.0.0.1"; Port = 3306 },
+    @{ Name = "redis:6379"; Host = "127.0.0.1"; Port = 6379 },
+    @{ Name = "qdrant:6333"; Host = "127.0.0.1"; Port = 6333 },
+    @{ Name = "minio:9000"; Host = "127.0.0.1"; Port = 9000 }
+)
+
+$serviceResults = $servicePorts | ForEach-Object {
+    [PSCustomObject]@{
+        Name = $_.Name
+        Status = if (Test-TcpEndpoint -HostName $_.Host -Port $_.Port) { "reachable" } else { "closed" }
+    }
+}
+
+Write-Host ""
+Write-Host "本地默认依赖端口探测：" -ForegroundColor Cyan
+$serviceResults | Format-Table -AutoSize
 
 $missing = $results | Where-Object { $_.Status -ne "ok" }
 if ($missing) {

@@ -3,7 +3,7 @@ use axum::{extract::{State}, http::HeaderMap, Json};
 use crate::{
     app::AppState,
     models::{ApiResponse, LoginRequest},
-    security::{build_auth_session, require_user, unauthorized_response},
+    security::{build_auth_session, build_refresh_session, require_user, unauthorized_response},
 };
 
 pub async fn login(
@@ -27,6 +27,19 @@ pub async fn current_user(
 ) -> axum::response::Response {
     match require_user(&headers, &state).await {
         Ok(user) => Json(ApiResponse::ok("current user", user)).into_response(),
+        Err(_) => unauthorized_response().into_response(),
+    }
+}
+
+pub async fn refresh_session(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> axum::response::Response {
+    match require_user(&headers, &state).await {
+        Ok(user) => {
+            let refreshed = build_refresh_session(&state.config, &user.username);
+            Json(ApiResponse::ok("session refreshed", refreshed)).into_response()
+        }
         Err(_) => unauthorized_response().into_response(),
     }
 }

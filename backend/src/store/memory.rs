@@ -11,10 +11,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::{
     AgentRun, CategoryItem, CategoryUpsertRequest, Citation, CreateDocumentRequest,
-    DashboardSummary, DeletedResource, DocumentDetail, DocumentListItem, DocumentVersion, FaqItem,
-    FaqUpsertRequest, FavoriteDocumentItem, FavoriteState, QaAnswer, QuestionHistoryItem,
-    ReadRecordItem, RoleItem, TagItem, TagUpsertRequest, UpdateDocumentRequest,
-    UserCreateRequest, UserItem, UserUpdateRequest,
+    DashboardSummary, DeletedResource, DocumentDetail, DocumentFileMeta, DocumentListItem,
+    DocumentSegment, DocumentVersion, FaqItem, FaqUpsertRequest, FavoriteDocumentItem,
+    FavoriteState, QaAnswer, QuestionHistoryItem, ReadRecordItem, RegisterDocumentFileRequest,
+    RoleItem, TagItem, TagUpsertRequest, UpdateDocumentRequest, UserCreateRequest, UserItem,
+    UserUpdateRequest,
 };
 use crate::security::{
     hash_password, password_needs_rehash, verify_password, ADMIN_PASSWORD, ADMIN_USERNAME,
@@ -26,6 +27,8 @@ use crate::store::{AppStore, StoreMutationError};
 #[serde(default)]
 struct StoreData {
     documents: Vec<DocumentDetail>,
+    document_segments: Vec<DocumentSegment>,
+    document_files: Vec<DocumentFileMeta>,
     managed_categories: Vec<CategoryItem>,
     managed_tags: Vec<TagItem>,
     managed_roles: Vec<RoleDefinition>,
@@ -39,6 +42,8 @@ struct StoreData {
     next_document_id: u64,
     next_user_id: u64,
     next_version_id: u64,
+    next_segment_id: u64,
+    next_file_id: u64,
     next_faq_id: u64,
     next_read_id: u64,
     next_question_id: u64,
@@ -106,9 +111,19 @@ impl MemoryStore {
 
     fn build_demo_data() -> StoreData {
         let now = Utc::now();
+        let source_file = DocumentFileMeta {
+            file_id: 1,
+            object_key: "demo/seed/database-access-flow.md".to_string(),
+            original_name: "数据库权限申请流程.md".to_string(),
+            mime_type: "text/markdown".to_string(),
+            file_size: 512,
+            sha256: Some("demo-seed-sha256".to_string()),
+            created_at: now,
+        };
         let version = DocumentVersion {
             version_id: 1,
             version_no: "v1.0.0".to_string(),
+            source_file_id: Some(source_file.file_id),
             title: "数据库权限申请流程".to_string(),
             content: "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。".to_string(),
             summary: "用于说明企业内部数据库权限申请的标准流程。".to_string(),
@@ -126,8 +141,10 @@ impl MemoryStore {
             version_no: version.version_no.clone(),
             is_favorite: false,
             tags: vec!["数据库".to_string(), "权限".to_string(), "流程".to_string()],
+            source_file: Some(source_file.clone()),
             versions: vec![version],
         };
+        let segments = Self::build_segments(now, 1, 1, &document.content, 1);
 
         let user = UserItem {
             user_id: 1,
@@ -148,10 +165,16 @@ impl MemoryStore {
             run_id: 1,
             agent_type: "summary".to_string(),
             trigger_type: "document_publish".to_string(),
+            document_id: Some(1),
+            version_id: Some(1),
+            question_id: None,
+            answer_id: None,
             status: "success".to_string(),
             input_text: "数据库权限申请流程".to_string(),
             output_text: "摘要已生成".to_string(),
+            meta_json: Some("{\"source\":\"bootstrap\"}".to_string()),
             started_at: now,
+            finished_at: Some(now),
         };
 
         let faq = FaqItem {
@@ -164,6 +187,8 @@ impl MemoryStore {
 
         StoreData {
             documents: vec![document],
+            document_segments: segments,
+            document_files: vec![source_file],
             managed_roles: vec![
                 RoleDefinition {
                     role_name: "系统管理员".to_string(),
@@ -221,6 +246,8 @@ impl MemoryStore {
             next_document_id: 2,
             next_user_id: 3,
             next_version_id: 2,
+            next_segment_id: 4,
+            next_file_id: 2,
             next_faq_id: 2,
             next_read_id: 1,
             next_question_id: 1,
@@ -253,18 +280,29 @@ impl MemoryStore {
         run_id: u64,
         agent_type: &str,
         trigger_type: &str,
+        document_id: Option<u64>,
+        version_id: Option<u64>,
+        question_id: Option<u64>,
+        answer_id: Option<u64>,
         status: &str,
         input_text: String,
         output_text: String,
+        meta_json: Option<String>,
     ) -> AgentRun {
         AgentRun {
             run_id,
             agent_type: agent_type.to_string(),
             trigger_type: trigger_type.to_string(),
+            document_id,
+            version_id,
+            question_id,
+            answer_id,
             status: status.to_string(),
             input_text,
             output_text,
+            meta_json,
             started_at: Utc::now(),
+            finished_at: Some(Utc::now()),
         }
     }
 
@@ -330,6 +368,113 @@ impl MemoryStore {
         }
     }
 
+    fn file_meta_by_id(state: &StoreData, file_id: u64) -> Option<DocumentFileMeta> {
+        state
+            .document_files
+            .iter()
+            .find(|item| item.file_id == file_id)
+            .cloned()
+    }
+
+    fn segments_by_document(state: &StoreData, document_id: u64) -> Vec<DocumentSegment> {
+        let mut items = state
+            .document_segments
+            .iter()
+            .filter(|item| item.document_id == document_id)
+            .cloned()
+            .collect::<Vec<_>>();
+        items.sort_by_key(|item| (item.version_id, item.chunk_order));
+        items
+    }
+
+    fn make_object_key(file_id: u64, original_name: &str) -> String {
+        let extension = Path::new(original_name)
+            .extension()
+            .and_then(|value| value.to_str())
+            .filter(|value| !value.is_empty())
+            .map(|value| format!(".{}", value))
+            .unwrap_or_default();
+        let normalized = original_name
+            .chars()
+            .map(|ch| {
+                if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_') {
+                    ch
+                } else {
+                    '-'
+                }
+            })
+            .collect::<String>()
+            .replace("--", "-")
+            .trim_matches('-')
+            .to_string();
+        let has_meaningful_stem = normalized
+            .trim_end_matches(&extension)
+            .chars()
+            .any(|ch| ch.is_ascii_alphanumeric());
+        let fallback = if normalized.is_empty() || !has_meaningful_stem {
+            format!("uploaded-file{}", extension)
+        } else {
+            normalized
+        };
+        format!("demo/uploads/{file_id}-{fallback}")
+    }
+
+    fn build_segments(
+        created_at: chrono::DateTime<Utc>,
+        document_id: u64,
+        version_id: u64,
+        content: &str,
+        start_segment_id: u64,
+    ) -> Vec<DocumentSegment> {
+        content
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .enumerate()
+            .map(|(index, line)| DocumentSegment {
+                segment_id: start_segment_id + index as u64,
+                version_id,
+                document_id,
+                chunk_order: (index + 1) as u32,
+                chunk_text: line.to_string(),
+                token_count: Some(line.chars().count() as u32),
+                embedding_status: "pending".to_string(),
+                created_at,
+            })
+            .collect()
+    }
+
+    fn search_score(question: &str, text: &str) -> usize {
+        let normalized_question = question.to_lowercase();
+        let normalized_text = text.to_lowercase();
+        normalized_question
+            .chars()
+            .filter(|ch| !ch.is_whitespace() && !matches!(ch, '，' | '。' | '？' | '?' | '！' | '!' | '、' | ',' | '.'))
+            .filter(|ch| normalized_text.contains(*ch))
+            .count()
+    }
+
+    fn replace_segments_for_document(
+        state: &mut StoreData,
+        document_id: u64,
+        version_id: u64,
+        content: &str,
+        created_at: chrono::DateTime<Utc>,
+    ) {
+        state
+            .document_segments
+            .retain(|item| !(item.document_id == document_id && item.version_id == version_id));
+        let segments = Self::build_segments(
+            created_at,
+            document_id,
+            version_id,
+            content,
+            state.next_segment_id,
+        );
+        state.next_segment_id += segments.len() as u64;
+        state.document_segments.extend(segments);
+    }
+
     fn ensure_demo_defaults(state: &mut StoreData) {
         if state.managed_roles.is_empty() {
             state.managed_roles = vec![
@@ -392,6 +537,41 @@ impl MemoryStore {
 
         if state.next_user_id < 3 {
             state.next_user_id = 3;
+        }
+
+        if state.next_file_id < 2 {
+            state.next_file_id = 2;
+        }
+
+        if state.document_segments.is_empty() {
+            let mut next_segment_id = 1;
+            for document in state.documents.iter().filter(|item| item.status == "published") {
+                if let Some(version) = document
+                    .versions
+                    .iter()
+                    .find(|version| version.version_no == document.version_no)
+                {
+                    let segments = Self::build_segments(
+                        version.created_at,
+                        document.document_id,
+                        version.version_id,
+                        &version.content,
+                        next_segment_id,
+                    );
+                    next_segment_id += segments.len() as u64;
+                    state.document_segments.extend(segments);
+                }
+            }
+        }
+
+        if state.next_segment_id == 0 {
+            state.next_segment_id = state
+                .document_segments
+                .iter()
+                .map(|item| item.segment_id)
+                .max()
+                .map(|value| value + 1)
+                .unwrap_or(1);
         }
     }
 
@@ -460,14 +640,27 @@ impl MemoryStore {
             .map(|item| item.versions.clone())
     }
 
+    pub fn list_document_segments(&self, id: u64) -> Option<Vec<DocumentSegment>> {
+        let state = self.inner.lock().expect("memory store lock");
+        state
+            .documents
+            .iter()
+            .find(|item| item.document_id == id)
+            .map(|_| Self::segments_by_document(&state, id))
+    }
+
     pub fn create_document(&self, _user_id: u64, payload: CreateDocumentRequest) -> DocumentDetail {
         let mut state = self.inner.lock().expect("memory store lock");
         Self::ensure_category_registered(&mut state, &payload.category_name);
         Self::ensure_tags_registered(&mut state, &payload.tags);
         let now = Utc::now();
+        let source_file = payload
+            .source_file_id
+            .and_then(|file_id| Self::file_meta_by_id(&state, file_id));
         let version = DocumentVersion {
             version_id: state.next_version_id,
             version_no: "v1.0.0".to_string(),
+            source_file_id: source_file.as_ref().map(|item| item.file_id),
             title: payload.title.clone(),
             content: payload.content.clone(),
             summary: payload.summary.clone(),
@@ -486,6 +679,7 @@ impl MemoryStore {
             version_no: "v1.0.0".to_string(),
             is_favorite: false,
             tags: payload.tags,
+            source_file,
             versions: vec![version],
         };
         state.next_document_id += 1;
@@ -500,9 +694,14 @@ impl MemoryStore {
             run_id,
             "summary",
             "manual",
+            Some(detail.document_id),
+            Some(detail.versions[0].version_id),
+            None,
+            None,
             "success",
             detail.title.clone(),
             "新文档已写入并生成初始摘要".to_string(),
+            Some("{\"stage\":\"create_document\"}".to_string()),
         ));
 
         self.persist_locked(&state);
@@ -517,6 +716,14 @@ impl MemoryStore {
         state.next_run_id += 1;
         let version_id = state.next_version_id;
         state.next_version_id += 1;
+        let existing_source_file_id = state
+            .documents
+            .iter()
+            .find(|item| item.document_id == id)
+            .and_then(|item| item.source_file.as_ref().map(|file| file.file_id));
+        let next_source_file_id = payload.source_file_id.or(existing_source_file_id);
+        let next_source_file = next_source_file_id
+            .and_then(|file_id| Self::file_meta_by_id(&state, file_id));
 
         let updated_clone = {
             let updated = state.documents.iter_mut().find(|item| item.document_id == id)?;
@@ -524,6 +731,7 @@ impl MemoryStore {
             let version = DocumentVersion {
                 version_id,
                 version_no: version_no.clone(),
+                source_file_id: next_source_file_id,
                 title: payload.title.clone(),
                 content: payload.content.clone(),
                 summary: payload.summary.clone(),
@@ -537,6 +745,7 @@ impl MemoryStore {
             updated.category_name = payload.category_name;
             updated.tags = payload.tags;
             updated.version_no = version_no;
+            updated.source_file = next_source_file.clone();
             updated.versions.push(version);
             updated.clone()
         };
@@ -550,9 +759,14 @@ impl MemoryStore {
             run_id,
             "summary",
             "manual",
+            Some(updated_clone.document_id),
+            Some(version_id),
+            None,
+            None,
             "success",
             updated_clone.title.clone(),
             "文档已更新并生成新版本".to_string(),
+            Some(format!("{{\"version_no\":\"{}\"}}", updated_clone.version_no)),
         ));
 
         self.persist_locked(&state);
@@ -570,14 +784,36 @@ impl MemoryStore {
             updated.status = "published".to_string();
             updated.clone()
         };
+        if let Some(version) = updated_clone
+            .versions
+            .iter()
+            .find(|item| item.version_no == updated_clone.version_no)
+        {
+            Self::replace_segments_for_document(
+                &mut state,
+                updated_clone.document_id,
+                version.version_id,
+                &version.content,
+                version.created_at,
+            );
+        }
 
         state.agent_runs.push(Self::make_run(
             run_id,
             "audit",
             "document_publish",
+            Some(updated_clone.document_id),
+            updated_clone
+                .versions
+                .iter()
+                .find(|item| item.version_no == updated_clone.version_no)
+                .map(|item| item.version_id),
+            None,
+            None,
             "success",
             updated_clone.title.clone(),
             "文档发布成功".to_string(),
+            Some(format!("{{\"status\":\"{}\"}}", updated_clone.status)),
         ));
 
         self.persist_locked(&state);
@@ -600,9 +836,14 @@ impl MemoryStore {
             run_id,
             "audit",
             "manual",
+            Some(archived_clone.document_id),
+            None,
+            None,
+            None,
             "success",
             archived_clone.title.clone(),
             "文档已归档".to_string(),
+            Some("{\"action\":\"archive\"}".to_string()),
         ));
 
         self.persist_locked(&state);
@@ -615,18 +856,46 @@ impl MemoryStore {
         let question_id = state.next_question_id;
         state.next_question_id += 1;
 
-        let (doc_title, version_no, snippet_text) = state
-            .documents
+        let best_segment = state
+            .document_segments
             .iter()
-            .find(|doc| doc.status != "archived")
-            .map(|doc| {
-                (
-                    doc.title.clone(),
-                    doc.version_no.clone(),
-                    Self::first_line(&doc.content),
-                )
+            .filter_map(|segment| {
+                let document = state
+                    .documents
+                    .iter()
+                    .find(|doc| doc.document_id == segment.document_id && doc.status != "archived")?;
+                Some((Self::search_score(&question_text, &segment.chunk_text), document, segment))
             })
-            .unwrap_or_else(|| ("暂无文档".to_string(), "v0".to_string(), "暂无证据".to_string()));
+            .max_by_key(|(score, document, segment)| (*score, document.document_id, segment.chunk_order));
+        let (doc_title, version_no, segment_id, snippet_text) = if let Some((_, document, segment)) = best_segment {
+            (
+                document.title.clone(),
+                document.version_no.clone(),
+                Some(segment.segment_id),
+                segment.chunk_text.clone(),
+            )
+        } else {
+            state
+                .documents
+                .iter()
+                .find(|doc| doc.status != "archived")
+                .map(|doc| {
+                    (
+                        doc.title.clone(),
+                        doc.version_no.clone(),
+                        None,
+                        Self::first_line(&doc.content),
+                    )
+                })
+                .unwrap_or_else(|| {
+                    (
+                        "暂无文档".to_string(),
+                        "v0".to_string(),
+                        None,
+                        "暂无证据".to_string(),
+                    )
+                })
+        };
 
         let answer_text = format!(
             "根据当前知识库，关于“{}”的建议处理方式是：先走标准申请流程，再由对应管理员审核开通。",
@@ -639,6 +908,7 @@ impl MemoryStore {
             confidence_score: 0.88,
             citations: vec![Citation {
                 cite_order: 1,
+                segment_id,
                 document_title: doc_title,
                 version_no,
                 snippet_text,
@@ -660,9 +930,14 @@ impl MemoryStore {
             run_id,
             "answer",
             "question_submit",
+            None,
+            None,
+            Some(question_id),
+            Some(answer.answer_id),
             "success",
             question_text,
             answer.answer_text.clone(),
+            Some(format!("{{\"citation_count\":{}}}", answer.citations.len())),
         ));
 
         self.persist_locked(&state);
@@ -1088,6 +1363,48 @@ impl MemoryStore {
         Ok(updated)
     }
 
+    pub fn reset_user_password(
+        &self,
+        user_id: u64,
+        password: String,
+    ) -> Result<UserItem, StoreMutationError> {
+        let mut state = self.inner.lock().expect("memory store lock");
+        let updated = state
+            .users
+            .iter()
+            .find(|item| item.user_id == user_id)
+            .cloned()
+            .ok_or(StoreMutationError::NotFound)?;
+        let credential = state
+            .user_credentials
+            .iter_mut()
+            .find(|item| item.user_id == user_id)
+            .ok_or(StoreMutationError::NotFound)?;
+        credential.password = hash_password(&password);
+        self.persist_locked(&state);
+        Ok(updated)
+    }
+
+    pub fn delete_user(&self, user_id: u64) -> Result<DeletedResource, StoreMutationError> {
+        if user_id == 1 {
+            return Err(StoreMutationError::Conflict);
+        }
+        let mut state = self.inner.lock().expect("memory store lock");
+        let before_count = state.users.len();
+        state.users.retain(|item| item.user_id != user_id);
+        if state.users.len() == before_count {
+            return Err(StoreMutationError::NotFound);
+        }
+        state.user_credentials.retain(|item| item.user_id != user_id);
+        state.favorite_documents.retain(|item| item.user_id != user_id);
+        state.read_records.retain(|item| item.user_id != user_id);
+        self.persist_locked(&state);
+        Ok(DeletedResource {
+            resource_type: "user".to_string(),
+            resource_key: user_id.to_string(),
+        })
+    }
+
     pub fn list_favorite_documents(&self, user_id: u64) -> Vec<FavoriteDocumentItem> {
         let state = self.inner.lock().expect("memory store lock");
         state
@@ -1178,9 +1495,57 @@ impl MemoryStore {
         state.users.iter().find(|item| item.username == username).cloned()
     }
 
+    pub fn reindex_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail> {
+        let mut state = self.inner.lock().expect("memory store lock");
+        let document = state.documents.iter().find(|item| item.document_id == id)?.clone();
+        let version = document
+            .versions
+            .iter()
+            .find(|item| item.version_no == document.version_no)
+            .cloned()?;
+        Self::replace_segments_for_document(
+            &mut state,
+            document.document_id,
+            version.version_id,
+            &version.content,
+            version.created_at,
+        );
+        let run_id = state.next_run_id;
+        state.next_run_id += 1;
+        let segment_count = Self::segments_by_document(&state, id).len();
+        state.agent_runs.push(Self::make_run(
+            run_id,
+            "index",
+            "document_reindex",
+            Some(document.document_id),
+            Some(version.version_id),
+            None,
+            None,
+            "success",
+            document.title.clone(),
+            format!("文档 {} 已重新生成 {} 个分段", document.document_id, segment_count),
+            Some(format!("{{\"segment_count\":{}}}", segment_count)),
+        ));
+        self.persist_locked(&state);
+        drop(state);
+        self.get_document(user_id, id)
+    }
+
     #[allow(dead_code)]
     pub fn storage_path(&self) -> &Path {
         &self.storage_path
+    }
+
+    pub fn list_document_files(&self) -> Vec<DocumentFileMeta> {
+        let state = self.inner.lock().expect("memory store lock");
+        let mut files = state.document_files.clone();
+        files.sort_by(|left, right| right.created_at.cmp(&left.created_at));
+        files
+    }
+
+    pub fn get_document_file(&self, file_id: u64) -> Option<DocumentFileMeta> {
+        let state = self.inner.lock().expect("memory store lock");
+        Self::file_meta_by_id(&state, file_id)
     }
 }
 
@@ -1208,6 +1573,43 @@ impl AppStore for MemoryStore {
 
     async fn get_versions(&self, id: u64) -> Option<Vec<DocumentVersion>> {
         Self::get_versions(self, id)
+    }
+
+    async fn list_document_segments(&self, id: u64) -> Option<Vec<DocumentSegment>> {
+        Self::list_document_segments(self, id)
+    }
+
+    async fn list_document_files(&self) -> Vec<DocumentFileMeta> {
+        Self::list_document_files(self)
+    }
+
+    async fn get_document_file(&self, file_id: u64) -> Option<DocumentFileMeta> {
+        Self::get_document_file(self, file_id)
+    }
+
+    async fn register_document_file(
+        &self,
+        _user_id: u64,
+        payload: RegisterDocumentFileRequest,
+    ) -> Result<DocumentFileMeta, StoreMutationError> {
+        let mut state = self.inner.lock().expect("memory store lock");
+        let file_id = state.next_file_id;
+        state.next_file_id += 1;
+
+        let file = DocumentFileMeta {
+            file_id,
+            object_key: payload
+                .object_key
+                .unwrap_or_else(|| Self::make_object_key(file_id, &payload.original_name)),
+            original_name: payload.original_name,
+            mime_type: payload.mime_type,
+            file_size: payload.file_size,
+            sha256: payload.sha256,
+            created_at: Utc::now(),
+        };
+        state.document_files.push(file.clone());
+        self.persist_locked(&state);
+        Ok(file)
     }
 
     async fn create_document(&self, user_id: u64, payload: CreateDocumentRequest) -> DocumentDetail {
@@ -1325,6 +1727,18 @@ impl AppStore for MemoryStore {
         Self::update_user(self, user_id, payload)
     }
 
+    async fn reset_user_password(
+        &self,
+        user_id: u64,
+        password: String,
+    ) -> Result<UserItem, StoreMutationError> {
+        Self::reset_user_password(self, user_id, password)
+    }
+
+    async fn delete_user(&self, user_id: u64) -> Result<DeletedResource, StoreMutationError> {
+        Self::delete_user(self, user_id)
+    }
+
     async fn list_favorite_documents(&self, user_id: u64) -> Vec<FavoriteDocumentItem> {
         Self::list_favorite_documents(self, user_id)
     }
@@ -1339,6 +1753,10 @@ impl AppStore for MemoryStore {
 
     async fn toggle_favorite_document(&self, user_id: u64, id: u64) -> Option<FavoriteState> {
         Self::toggle_favorite_document(self, user_id, id)
+    }
+
+    async fn reindex_document(&self, user_id: u64, id: u64) -> Option<DocumentDetail> {
+        Self::reindex_document(self, user_id, id)
     }
 }
 
@@ -1364,6 +1782,7 @@ mod tests {
             category_name: "运维流程".to_string(),
             tags: vec!["VPN".to_string(), "运维".to_string()],
             change_note: "初始化版本".to_string(),
+            source_file_id: None,
         }
     }
 
@@ -1389,6 +1808,7 @@ mod tests {
                     category_name: "运维流程".to_string(),
                     tags: vec!["VPN".to_string(), "远程办公".to_string()],
                     change_note: "补充验证步骤".to_string(),
+                    source_file_id: None,
                 },
             )
             .expect("updated document");
@@ -1400,6 +1820,11 @@ mod tests {
             .publish_document(1, created.document_id)
             .expect("published document");
         assert_eq!(published.status, "published");
+        let segments = store
+            .list_document_segments(created.document_id)
+            .expect("document segments");
+        assert!(!segments.is_empty());
+        assert_eq!(segments[0].document_id, created.document_id);
 
         let archived = store
             .archive_document(1, created.document_id)
@@ -1422,6 +1847,7 @@ mod tests {
         assert_eq!(answer.answer_id, 1);
         assert_eq!(answer.citations.len(), 1);
         assert_eq!(answer.citations[0].document_title, "数据库权限申请流程");
+        assert!(answer.citations[0].segment_id.is_some());
 
         let history = store.list_question_history(1);
         assert_eq!(history.len(), 1);

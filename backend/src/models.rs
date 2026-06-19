@@ -43,10 +43,34 @@ pub struct DocumentListItem {
 pub struct DocumentVersion {
     pub version_id: u64,
     pub version_no: String,
+    pub source_file_id: Option<u64>,
     pub title: String,
     pub content: String,
     pub summary: String,
     pub change_note: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DocumentFileMeta {
+    pub file_id: u64,
+    pub object_key: String,
+    pub original_name: String,
+    pub mime_type: String,
+    pub file_size: u64,
+    pub sha256: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DocumentSegment {
+    pub segment_id: u64,
+    pub version_id: u64,
+    pub document_id: u64,
+    pub chunk_order: u32,
+    pub chunk_text: String,
+    pub token_count: Option<u32>,
+    pub embedding_status: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -62,6 +86,7 @@ pub struct DocumentDetail {
     #[serde(default)]
     pub is_favorite: bool,
     pub tags: Vec<String>,
+    pub source_file: Option<DocumentFileMeta>,
     pub versions: Vec<DocumentVersion>,
 }
 
@@ -73,6 +98,8 @@ pub struct CreateDocumentRequest {
     pub category_name: String,
     pub tags: Vec<String>,
     pub change_note: String,
+    #[serde(default)]
+    pub source_file_id: Option<u64>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -83,11 +110,31 @@ pub struct UpdateDocumentRequest {
     pub category_name: String,
     pub tags: Vec<String>,
     pub change_note: String,
+    #[serde(default)]
+    pub source_file_id: Option<u64>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RegisterDocumentFileRequest {
+    #[serde(default)]
+    pub object_key: Option<String>,
+    pub original_name: String,
+    pub mime_type: String,
+    pub file_size: u64,
+    pub sha256: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct UploadDocumentFileRequest {
+    pub original_name: String,
+    pub mime_type: String,
+    pub content_base64: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Citation {
     pub cite_order: u32,
+    pub segment_id: Option<u64>,
     pub document_title: String,
     pub version_no: String,
     pub snippet_text: String,
@@ -113,10 +160,16 @@ pub struct AgentRun {
     pub run_id: u64,
     pub agent_type: String,
     pub trigger_type: String,
+    pub document_id: Option<u64>,
+    pub version_id: Option<u64>,
+    pub question_id: Option<u64>,
+    pub answer_id: Option<u64>,
     pub status: String,
     pub input_text: String,
     pub output_text: String,
+    pub meta_json: Option<String>,
     pub started_at: DateTime<Utc>,
+    pub finished_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -203,6 +256,11 @@ pub struct UserUpdateRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct ResetPasswordRequest {
+    pub password: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
@@ -211,8 +269,16 @@ pub struct LoginRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AuthSession {
     pub access_token: String,
+    pub expires_at: DateTime<Utc>,
     pub token_type: String,
     pub user: UserItem,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RefreshSessionResponse {
+    pub access_token: String,
+    pub expires_at: DateTime<Utc>,
+    pub token_type: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

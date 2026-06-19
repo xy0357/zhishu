@@ -1,0 +1,1087 @@
+﻿{
+    "generated_at":  "2026-06-10T20:22:01",
+    "vector_size":  8,
+    "distance":  "Cosine",
+    "points":  [
+                   {
+                       "id":  61,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  61,
+                                       "document_id":  20,
+                                       "version_id":  20,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  62,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  62,
+                                       "document_id":  20,
+                                       "version_id":  20,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  63,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  63,
+                                       "document_id":  20,
+                                       "version_id":  20,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  55,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  55,
+                                       "document_id":  19,
+                                       "version_id":  19,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  56,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  56,
+                                       "document_id":  19,
+                                       "version_id":  19,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  57,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  57,
+                                       "document_id":  19,
+                                       "version_id":  19,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  52,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  52,
+                                       "document_id":  18,
+                                       "version_id":  18,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  53,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  53,
+                                       "document_id":  18,
+                                       "version_id":  18,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  54,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  54,
+                                       "document_id":  18,
+                                       "version_id":  18,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  46,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  46,
+                                       "document_id":  17,
+                                       "version_id":  17,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  47,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  47,
+                                       "document_id":  17,
+                                       "version_id":  17,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  48,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  48,
+                                       "document_id":  17,
+                                       "version_id":  17,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  43,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  43,
+                                       "document_id":  16,
+                                       "version_id":  16,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  44,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  44,
+                                       "document_id":  16,
+                                       "version_id":  16,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  45,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  45,
+                                       "document_id":  16,
+                                       "version_id":  16,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  37,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  37,
+                                       "document_id":  15,
+                                       "version_id":  15,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  38,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  38,
+                                       "document_id":  15,
+                                       "version_id":  15,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  39,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  39,
+                                       "document_id":  15,
+                                       "version_id":  15,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  34,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  34,
+                                       "document_id":  14,
+                                       "version_id":  14,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  35,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  35,
+                                       "document_id":  14,
+                                       "version_id":  14,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  36,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  36,
+                                       "document_id":  14,
+                                       "version_id":  14,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  28,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  28,
+                                       "document_id":  13,
+                                       "version_id":  13,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  29,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  29,
+                                       "document_id":  13,
+                                       "version_id":  13,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  30,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  30,
+                                       "document_id":  13,
+                                       "version_id":  13,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  25,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  25,
+                                       "document_id":  12,
+                                       "version_id":  12,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  26,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  26,
+                                       "document_id":  12,
+                                       "version_id":  12,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  27,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  27,
+                                       "document_id":  12,
+                                       "version_id":  12,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  22,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  22,
+                                       "document_id":  11,
+                                       "version_id":  11,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  23,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  23,
+                                       "document_id":  11,
+                                       "version_id":  11,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  24,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  24,
+                                       "document_id":  11,
+                                       "version_id":  11,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  16,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  16,
+                                       "document_id":  9,
+                                       "version_id":  9,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  17,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  17,
+                                       "document_id":  9,
+                                       "version_id":  9,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  18,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  18,
+                                       "document_id":  9,
+                                       "version_id":  9,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  10,
+                       "vector":  [
+                                      0.686275,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  10,
+                                       "document_id":  8,
+                                       "version_id":  8,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ??????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  11,
+                       "vector":  [
+                                      0.690196,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  11,
+                                       "document_id":  8,
+                                       "version_id":  8,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????????????",
+                                       "token_count":  15,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  12,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176
+                                  ],
+                       "payload":  {
+                                       "segment_id":  12,
+                                       "document_id":  8,
+                                       "version_id":  8,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ?????????????????????",
+                                       "token_count":  15,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  1,
+                       "vector":  [
+                                      0.686275,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  1,
+                                       "document_id":  7,
+                                       "version_id":  7,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ??????????????????",
+                                       "token_count":  12,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  2,
+                       "vector":  [
+                                      0.690196,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  2,
+                                       "document_id":  7,
+                                       "version_id":  7,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????????????",
+                                       "token_count":  15,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  3,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176,
+                                      0.741176
+                                  ],
+                       "payload":  {
+                                       "segment_id":  3,
+                                       "document_id":  7,
+                                       "version_id":  7,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ?????????????????????",
+                                       "token_count":  15,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  7,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  7,
+                                       "document_id":  2,
+                                       "version_id":  2,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????",
+                                       "token_count":  8,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  8,
+                       "vector":  [
+                                      0.443137,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.247059
+                                  ],
+                       "payload":  {
+                                       "segment_id":  8,
+                                       "document_id":  2,
+                                       "version_id":  2,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  9,
+                       "vector":  [
+                                      0.694118,
+                                      0.67451,
+                                      0.619608,
+                                      0.741176,
+                                      0.741176,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  9,
+                                       "document_id":  2,
+                                       "version_id":  2,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. ??????????????????",
+                                       "token_count":  13,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  4,
+                       "vector":  [
+                                      0.439216,
+                                      0.427451,
+                                      0.372549,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  4,
+                                       "document_id":  1,
+                                       "version_id":  1,
+                                       "chunk_order":  1,
+                                       "chunk_text":  "1. ?????????????",
+                                       "token_count":  11,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  5,
+                       "vector":  [
+                                      0.690196,
+                                      0.67451,
+                                      0.619608,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118,
+                                      0.494118
+                                  ],
+                       "payload":  {
+                                       "segment_id":  5,
+                                       "document_id":  1,
+                                       "version_id":  1,
+                                       "chunk_order":  2,
+                                       "chunk_text":  "2. ????????????????",
+                                       "token_count":  10,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   },
+                   {
+                       "id":  6,
+                       "vector":  [
+                                      0.941176,
+                                      0.921569,
+                                      0.866667,
+                                      0.003922,
+                                      0.752941,
+                                      0.74902,
+                                      0.619608,
+                                      0.741176
+                                  ],
+                       "payload":  {
+                                       "segment_id":  6,
+                                       "document_id":  1,
+                                       "version_id":  1,
+                                       "chunk_order":  3,
+                                       "chunk_text":  "3. DBA ?????????????????????",
+                                       "token_count":  17,
+                                       "embedding_status":  "active",
+                                       "source":  "zhishu-demo-hash",
+                                       "vector_mode":  "demo_hash_v1"
+                                   }
+                   }
+               ]
+}
