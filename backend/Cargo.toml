@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "zhishu-backend"
 version = "0.1.0"
 edition = "2021"
@@ -19,3 +19,4 @@ sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "chrono",
 tower = { version = "0.5", features = ["util"] }
 base64 = "0.22"
 sha2 = "0.10"
+

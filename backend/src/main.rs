@@ -1,5 +1,6 @@
 mod app;
 mod config;
+mod llm;
 mod models;
 mod object_storage;
 mod redis_cache;

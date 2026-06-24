@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { api, clearAuthToken, setAuthToken } from "./api";
 import type {
   AgentRun,
@@ -110,6 +110,51 @@ const emptyUserForm: UserCreatePayload = {
 
 const dependencyOrder = ["mysql", "redis", "qdrant", "minio"] as const;
 
+const qaProgressSteps = [
+  "正在检索知识库",
+  "正在匹配证据片段",
+  "正在生成最终回答"
+] as const;
+
+function isLikelyGarbled(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  const questionMarkCount = (trimmed.match(/[?]/g) || []).length;
+  return questionMarkCount >= 4 && questionMarkCount / Math.max(trimmed.length, 1) > 0.08;
+}
+
+function normalizeDisplayText(text: string | null | undefined, fallback = "内容暂不可用") {
+  const cleaned = (text ?? "").split("�").join("").split("\r\n").join("\n").trim();
+  if (!cleaned) {
+    return fallback;
+  }
+
+  if (isLikelyGarbled(cleaned)) {
+    return fallback;
+  }
+
+  return cleaned;
+}
+
+function parseMetaJson(metaJson: string | null) {
+  if (!metaJson) {
+    return [] as Array<{ key: string; value: string }>;
+  }
+
+  try {
+    const parsed = JSON.parse(metaJson) as Record<string, unknown>;
+    return Object.entries(parsed).map(([key, value]) => ({
+      key,
+      value: typeof value === "string" ? value : JSON.stringify(value)
+    }));
+  } catch {
+    return [{ key: "meta_json", value: metaJson }];
+  }
+}
+
 export default function App() {
   const [view, setView] = useState<ViewKey>("dashboard");
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
@@ -127,7 +172,7 @@ export default function App() {
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
   const [questionHistory, setQuestionHistory] = useState<QuestionHistoryItem[]>([]);
   const [documentFiles, setDocumentFiles] = useState<DocumentFileMeta[]>([]);
-  const [questionText, setQuestionText] = useState("如何申请数据库权限？");
+  const [questionText, setQuestionText] = useState("生产环境数据库只读权限如何申请？");
   const [answer, setAnswer] = useState<QaAnswer | null>(null);
   const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
   const [loginForm, setLoginForm] = useState<LoginPayload>({
@@ -150,6 +195,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [qaProgressIndex, setQaProgressIndex] = useState(0);
+  const [qaHistoryCollapsed, setQaHistoryCollapsed] = useState(true);
+  const [expandedRunId, setExpandedRunId] = useState<number | null>(null);
   const [passwordResetValue, setPasswordResetValue] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -166,6 +215,19 @@ export default function App() {
   useEffect(() => {
     void initializeSession();
   }, []);
+
+  useEffect(() => {
+    if (!asking) {
+      setQaProgressIndex(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setQaProgressIndex((current) => (current + 1) % qaProgressSteps.length);
+    }, 1200);
+
+    return () => window.clearInterval(timer);
+  }, [asking]);
 
   async function initializeSession() {
     try {
@@ -236,8 +298,9 @@ export default function App() {
       }
       setError(null);
     } catch (err) {
-      if (err instanceof Error && err.message.includes("401")) {
+      if (isUnauthorizedError(err)) {
         logout();
+        setError("登录已失效，请重新登录。");
         return;
       }
       setError(err instanceof Error ? err.message : "加载失败");
@@ -279,6 +342,15 @@ export default function App() {
     setAuthLoading(false);
   }
 
+  function isUnauthorizedError(err: unknown) {
+    if (!(err instanceof Error)) {
+      return false;
+    }
+
+    const message = err.message.toLowerCase();
+    return message.includes("401") || message.includes("unauthorized");
+  }
+
   function applyDocumentToForm(detail: DocumentDetail) {
     setDocumentForm({
       title: detail.title,
@@ -308,9 +380,15 @@ export default function App() {
       applyDocumentToForm(detail);
       setView("documents");
     } catch (err) {
+      if (isUnauthorizedError(err)) {
+        logout();
+        setError("登录已失效，请重新登录。");
+        return;
+      }
       setError(err instanceof Error ? err.message : "文档详情加载失败");
     }
   }
+
 
   function resetForm() {
     setDocumentForm(emptyForm);
@@ -499,13 +577,26 @@ export default function App() {
   }
 
   async function askQuestion() {
-    try {
-      const result = await api.askQuestion(questionText);
-      setAnswer(result);
+    const normalizedQuestion = questionText.trim();
+    if (!normalizedQuestion) {
+      setError("请输入问题后再发起问答");
       setView("qa");
+      return;
+    }
+
+    try {
+      setAsking(true);
+      setQaProgressIndex(0);
+      setQuestionText(normalizedQuestion);
+      setView("qa");
+      setError(null);
+      const result = await api.askQuestion(normalizedQuestion);
+      setAnswer(result);
       await bootstrap(selectedDocument?.document_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "问答请求失败");
+    } finally {
+      setAsking(false);
     }
   }
 
@@ -732,8 +823,8 @@ export default function App() {
         <section className="question-card">
           <h2>快速提问</h2>
           <textarea value={questionText} onChange={(event) => setQuestionText(event.target.value)} rows={4} />
-          <button className="primary" onClick={askQuestion}>
-            发起问答
+          <button className="primary" onClick={askQuestion} disabled={asking}>
+            {asking ? "问答生成中..." : "发起问答"}
           </button>
         </section>
       </aside>
@@ -1110,52 +1201,144 @@ export default function App() {
         ) : null}
 
         {!loading && view === "qa" ? (
-          <section className="content-layout qa-layout">
-            <div className="panel">
-              <div className="panel-title">
-                <h3>智能问答</h3>
-                <span>RAG + 引用证据</span>
+          <section className={`content-layout qa-layout ${qaHistoryCollapsed ? "qa-layout-collapsed" : ""}`}>
+            <div className="panel qa-main-panel">
+              <div className="panel-title qa-main-title">
+                <div>
+                  <h3>智能问答</h3>
+                  <span>类比对话助手的交互体验，并清晰展示检索与生成过程</span>
+                </div>
+                <button className="ghost qa-toggle-button" onClick={() => setQaHistoryCollapsed((prev) => !prev)}>
+                  {qaHistoryCollapsed ? "展开历史" : "收起历史"}
+                </button>
               </div>
-              {answer ? (
-                <>
-                  <article className="article-card">
-                    <h4>答案</h4>
-                    <p>{answer.answer_text}</p>
-                    <p>置信度：{answer.confidence_score}</p>
+
+              <div className="qa-chat-shell">
+                <div className="qa-thread">
+                  <article className="qa-message qa-message-assistant qa-message-intro">
+                    <div className="qa-avatar">AI</div>
+                    <div className="qa-bubble">
+                      <strong>欢迎使用</strong>
+                      <p>你可以直接询问制度流程、数据库权限、VPN 远程接入、发版回滚或数据导出规范，我会先检索知识库证据，再生成答案。</p>
+                    </div>
                   </article>
-                  <section className="citation-list">
+
+                  {(asking || answer) && questionText.trim() ? (
+                    <article className="qa-message qa-message-user">
+                      <div className="qa-bubble">
+                        <strong>我的问题</strong>
+                        <p>{normalizeDisplayText(questionText, "请输入一个具体问题")}</p>
+                      </div>
+                    </article>
+                  ) : null}
+
+                  {asking ? (
+                    <article className="qa-message qa-message-assistant">
+                      <div className="qa-avatar">AI</div>
+                      <div className="qa-bubble qa-bubble-loading">
+                        <strong>处理中</strong>
+                        <p>系统正在依次执行检索、证据匹配和回答生成，你可以把这个过程理解成一个可追踪的 Agent 执行链路。</p>
+                        <div className="qa-progress-list">
+                          {qaProgressSteps.map((step, index) => (
+                            <div
+                              className={`qa-progress-item ${index < qaProgressIndex ? "done" : ""} ${index === qaProgressIndex ? "active" : ""}`}
+                              key={step}
+                            >
+                              <span className="qa-progress-dot">{index + 1}</span>
+                              <div>
+                                <strong>{step}</strong>
+                                <small>
+                                  {index < qaProgressIndex
+                                    ? "已完成"
+                                    : index === qaProgressIndex
+                                      ? "进行中"
+                                      : "等待执行"}
+                                </small>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </article>
+                  ) : null}
+
+                  {answer ? (
+                    <article className="qa-message qa-message-assistant">
+                      <div className="qa-avatar">AI</div>
+                      <div className="qa-bubble">
+                        <strong>系统回答</strong>
+                        <p>{normalizeDisplayText(answer.answer_text, "当前未生成可展示的回答，请重新提问")}</p>
+                        <div className="qa-answer-meta">
+                          <span>置信度 {answer.confidence_score.toFixed(2)}</span>
+                          <span>{answer.citations.length} 条引用证据</span>
+                        </div>
+                      </div>
+                    </article>
+                  ) : null}
+
+                  {!asking && !answer ? (
+                    <div className="empty-state qa-empty-state">在下方输入问题后，页面会按“提问 → 检索证据 → 生成回答”的顺序展示整个过程。</div>
+                  ) : null}
+                </div>
+
+                <section className="qa-composer qa-composer-chat">
+                  <label htmlFor="qa-question">问题输入区</label>
+                  <textarea
+                    id="qa-question"
+                    className="compact-input qa-textarea"
+                    rows={4}
+                    placeholder="例如：生产环境数据库只读权限如何申请？"
+                    value={questionText}
+                    onChange={(event) => setQuestionText(event.target.value)}
+                  />
+                  <div className="inline-actions qa-composer-actions">
+                    <button className="ghost" onClick={() => setQuestionText("生产环境数据库只读权限如何申请？")}>
+                      恢复示例问题
+                    </button>
+                    <button className="primary" onClick={() => void askQuestion()} disabled={asking}>
+                      {asking ? qaProgressSteps[qaProgressIndex] : "提交问题"}
+                    </button>
+                  </div>
+                </section>
+
+                {answer?.citations.length ? (
+                  <section className="citation-list qa-citation-list">
                     <h4>引用证据</h4>
                     {answer.citations.map((citation) => (
                       <div className="citation-item" key={citation.cite_order}>
-                        <strong>{citation.document_title}</strong>
+                        <strong>{normalizeDisplayText(citation.document_title, "未命名文档")}</strong>
                         <span>
-                          {citation.version_no} · 得分 {citation.score} · {citation.segment_id ? `片段ID ${citation.segment_id}` : "无片段ID"}
+                          {citation.version_no} | 得分 {citation.score.toFixed(2)} | {citation.segment_id ? `片段 ${citation.segment_id}` : "无片段编号"}
                         </span>
-                        <p>{citation.snippet_text}</p>
+                        <p>{normalizeDisplayText(citation.snippet_text, "该证据片段暂不可展示")}</p>
                       </div>
                     ))}
                   </section>
-                </>
-              ) : (
-                <div className="empty-state">左侧输入问题后可在此查看回答</div>
-              )}
+                ) : null}
+              </div>
             </div>
 
-            <div className="panel">
-              <div className="panel-title">
-                <h3>问答历史</h3>
-                <span>{questionHistory.length} 条</span>
+            {!qaHistoryCollapsed ? (
+              <div className="panel qa-side-panel">
+                <div className="panel-title">
+                  <h3>问答历史</h3>
+                  <span>{questionHistory.length} 条</span>
+                </div>
+                <div className="history-list">
+                  {questionHistory.map((item) => (
+                    <button
+                      className="history-item history-button"
+                      key={item.question_id}
+                      onClick={() => setQuestionText(item.question_text)}
+                    >
+                      <strong>{normalizeDisplayText(item.question_text, "历史问题")}</strong>
+                      <p>{normalizeDisplayText(item.answer_preview, "这条历史记录存在旧数据编码噪声，建议重新提问生成新答案。")}</p>
+                      <small>{new Date(item.created_at).toLocaleString("zh-CN")}</small>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="history-list">
-                {questionHistory.map((item) => (
-                  <div className="history-item" key={item.question_id}>
-                    <strong>{item.question_text}</strong>
-                    <p>{item.answer_preview}</p>
-                    <small>{new Date(item.created_at).toLocaleString("zh-CN")}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -1535,33 +1718,84 @@ export default function App() {
               <span>摘要、问答、审计执行链路</span>
             </div>
             <div className="run-table">
-              {agentRuns.map((run) => (
-                <div className="run-row" key={run.run_id}>
-                  <div>
-                    <strong>{run.agent_type}</strong>
-                    <p>{run.trigger_type} · {run.status}</p>
-                    <small>
-                      {[
-                        run.document_id ? `文档 ${run.document_id}` : "",
-                        run.version_id ? `版本 ${run.version_id}` : "",
-                        run.question_id ? `问题 ${run.question_id}` : "",
-                        run.answer_id ? `回答 ${run.answer_id}` : ""
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || "无上下文主键"}
-                    </small>
+              {agentRuns.map((run) => {
+                const contextKeys = [
+                  run.document_id ? `文档 ${run.document_id}` : "",
+                  run.version_id ? `版本 ${run.version_id}` : "",
+                  run.question_id ? `问题 ${run.question_id}` : "",
+                  run.answer_id ? `回答 ${run.answer_id}` : ""
+                ].filter(Boolean);
+                const metaItems = parseMetaJson(run.meta_json);
+                const isExpanded = expandedRunId === run.run_id;
+
+                return (
+                  <div className="run-row" key={run.run_id}>
+                    <div className="run-header">
+                      <div>
+                        <strong>{run.agent_type === "summary" ? "文档摘要任务" : "问答任务"}</strong>
+                        <p>{run.trigger_type} · {run.status}</p>
+                      </div>
+                      <span className={`status-pill ${run.status === "success" ? "online" : "offline"}`}>
+                        {run.status === "success" ? "成功" : run.status}
+                      </span>
+                    </div>
+
+                    <div className="run-preview-grid">
+                      <div className="run-preview-card">
+                        <strong>输入摘要</strong>
+                        <p>{normalizeDisplayText(run.input_text, "输入内容为空")}</p>
+                      </div>
+                      <div className="run-preview-card">
+                        <strong>输出摘要</strong>
+                        <p>{normalizeDisplayText(run.output_text, "该条 Agent 输出存在编码噪声")}</p>
+                      </div>
+                    </div>
+
+                    <div className="run-context-row">
+                      <span>{contextKeys.join(" · ") || "无上下文主键"}</span>
+                      <span>
+                        {new Date(run.started_at).toLocaleString("zh-CN")}
+                        {run.finished_at ? ` → ${new Date(run.finished_at).toLocaleString("zh-CN")}` : ""}
+                      </span>
+                    </div>
+
+                    <div className="inline-actions run-actions">
+                      <button
+                        className="ghost"
+                        onClick={() => setExpandedRunId((current) => (current === run.run_id ? null : run.run_id))}
+                      >
+                        {isExpanded ? "收起详情" : "展开详情"}
+                      </button>
+                    </div>
+
+                    {isExpanded ? (
+                      <div className="run-detail-grid">
+                        <div className="run-detail-card">
+                          <strong>完整输入</strong>
+                          <p>{normalizeDisplayText(run.input_text, "输入内容为空")}</p>
+                        </div>
+                        <div className="run-detail-card">
+                          <strong>完整输出</strong>
+                          <p>{normalizeDisplayText(run.output_text, "该条 Agent 输出存在编码噪声")}</p>
+                        </div>
+                        {metaItems.length ? (
+                          <div className="run-detail-card run-meta-card">
+                            <strong>执行元数据</strong>
+                            <div className="run-meta-list">
+                              {metaItems.map((item) => (
+                                <div className="run-meta-item" key={`${run.run_id}-${item.key}`}>
+                                  <span>{item.key}</span>
+                                  <code>{normalizeDisplayText(item.value, "元数据为空")}</code>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
-                  <div>
-                    <p>{run.input_text}</p>
-                    <small>{run.output_text}</small>
-                    {run.meta_json ? <small>{run.meta_json}</small> : null}
-                  </div>
-                  <small>
-                    {new Date(run.started_at).toLocaleString("zh-CN")}
-                    {run.finished_at ? ` → ${new Date(run.finished_at).toLocaleString("zh-CN")}` : ""}
-                  </small>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ) : null}
@@ -1579,3 +1813,7 @@ function SummaryCard(props: { label: string; value: number; hint: string }) {
     </div>
   );
 }
+
+
+
+

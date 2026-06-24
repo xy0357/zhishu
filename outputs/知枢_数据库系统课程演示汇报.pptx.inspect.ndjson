@@ -1,0 +1,268 @@
+{"kind":"deck","id":"pr/w44r0l","name":"Deck"}
+{"kind":"layout","layoutId":"9c77cd89-0e71-4a3a-9f41-2e1dc6262dba","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"96637f51-465c-4aa3-bdd3-b798b8c32086","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/0iup3w","slide":1,"title":"知枢","textShapes":5}
+{"kind":"shape","id":"sh/ylc7u54z","slide":1,"bbox":[46,30,1188,658]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":1,"text":"知枢","textPreview":"知枢","textChars":2,"textLines":1,"bbox":[90,78,520,76]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":1,"text":"企业知识资产管理与智能检索平台","textPreview":"企业知识资产管理与智能检索平台","textChars":15,"textLines":1,"bbox":[92,154,520,100]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":1,"text":"面向数据库系统课程的综合实践项目。\n围绕 MySQL 主链路，完成知识管理、检索问答、证据追溯与 Agent 审计闭环。","textPreview":"面向数据库系统课程的综合实践项目。 | 围绕 MySQL 主链路，完成知识管理、检索问答、证据追溯与 Agent 审计闭环。","textChars":60,"textLines":2,"bbox":[92,282,520,130]}
+{"kind":"textbox","id":"sh/yxobm58z","slide":1,"text":"数据库课程汇报","textPreview":"数据库课程汇报","textChars":7,"textLines":1,"bbox":[92,444,152,40]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":1,"text":"MySQL · Rust · React · AI","textPreview":"MySQL · Rust · React · AI","textChars":25,"textLines":1,"bbox":[260,444,280,40]}
+{"kind":"image","id":"im/1cfa9w3m","slide":1,"name":"","geometry":"roundRect","alt":"dashboard","bbox":[670,78,500,286]}
+{"kind":"image","id":"im/qh0fepkz","slide":1,"name":"","geometry":"roundRect","alt":"qa","bbox":[670,388,500,222]}
+{"kind":"notes","id":"nt/0iup3w","slide":1,"text":""}
+{"kind":"slide","id":"sl/8adj18","slide":2,"title":"02","textShapes":18}
+{"kind":"textbox","id":"sh/m94fu18j","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":2,"text":"汇报结构","textPreview":"汇报结构","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/4fu18jqh","slide":2,"text":"目录","textPreview":"目录","textChars":2,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":2,"text":"按照 7 分钟讲解主线组织内容，并预留 3 分钟答疑重点","textPreview":"按照 7 分钟讲解主线组织内容，并预留 3 分钟答疑重点","textChars":28,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/qxs72x4n","slide":2,"bbox":[86,198,1108,388]}
+{"kind":"textbox","id":"sh/xobm58z2","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[118,226,68,30]}
+{"kind":"textbox","id":"sh/83itgfml","slide":2,"text":"01 系统需求分析","textPreview":"01 系统需求分析","textChars":9,"textLines":1,"bbox":[208,224,860,30]}
+{"kind":"shape","id":"sh/fepkzupw","slide":2,"bbox":[118,264,1016,2]}
+{"kind":"textbox","id":"sh/mtwra5gb","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[118,278,68,30]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":2,"text":"02 建设目标与技术路线","textPreview":"02 建设目标与技术路线","textChars":12,"textLines":1,"bbox":[208,276,860,30]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":2,"bbox":[118,316,1016,2]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[118,330,68,30]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":2,"text":"03 E-R 图与关系模式","textPreview":"03 E-R 图与关系模式","textChars":13,"textLines":1,"bbox":[208,328,860,30]}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":2,"bbox":[118,368,1016,2]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":2,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[118,382,68,30]}
+{"kind":"textbox","id":"sh/61032lsz","slide":2,"text":"04 前端功能界面","textPreview":"04 前端功能界面","textChars":9,"textLines":1,"bbox":[208,380,860,30]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":2,"bbox":[118,420,1016,2]}
+{"kind":"textbox","id":"sh/ovahoza1","slide":2,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[118,434,68,30]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":2,"text":"05 后端增删改查实现","textPreview":"05 后端增删改查实现","textChars":11,"textLines":1,"bbox":[208,432,860,30]}
+{"kind":"shape","id":"sh/1kre1w7m","slide":2,"bbox":[118,472,1016,2]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":2,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[118,486,68,30]}
+{"kind":"textbox","id":"sh/ji5snelo","slide":2,"text":"06 数据库与 AI 亮点","textPreview":"06 数据库与 AI 亮点","textChars":13,"textLines":1,"bbox":[208,484,860,30]}
+{"kind":"shape","id":"sh/uxc3ylc7","slide":2,"bbox":[118,524,1016,2]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":2,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[118,538,68,30]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":2,"text":"07 项目总结","textPreview":"07 项目总结","textChars":7,"textLines":1,"bbox":[208,536,860,30]}
+{"kind":"shape","id":"sh/j6tovaho","slide":2,"bbox":[118,576,1016,2]}
+{"kind":"notes","id":"nt/8adj18","slide":2,"text":""}
+{"kind":"slide","id":"sl/gz3xi8","slide":3,"title":"03","textShapes":11}
+{"kind":"textbox","id":"sh/neloj2t8","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/czed8v6p","slide":3,"text":"需求分析","textPreview":"需求分析","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":3,"text":"系统需求分析","textPreview":"系统需求分析","textChars":6,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/u54zidon","slide":3,"text":"从业务目标、数据库目标与课程要求三个层面确定系统边界","textPreview":"从业务目标、数据库目标与课程要求三个层面确定系统边界","textChars":26,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/nqxs72x4","slide":3,"bbox":[78,188,350,246]}
+{"kind":"shape","id":"sh/cbulwval","slide":3,"bbox":[78,188,350,8]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":3,"text":"业务场景","textPreview":"业务场景","textChars":4,"textLines":1,"bbox":[98,206,310,32]}
+{"kind":"textbox","id":"sh/y90je9cv","slide":3,"text":"• 企业制度、流程、FAQ 与操作规范分散，人工查找效率低。\n• 知识内容更新频繁，需要保留版本并支持发布后的统一检索。\n• 员工希望像对话助手一样直接提问，而不是逐篇翻文档。","textPreview":"• 企业制度、流程、FAQ 与操作规范分散，人工查找效率低。 | • 知识内容更新频繁，需要保留版本并支持发布后的统一检索。 | • 员工希望像对话助手一样直接提问，而不是逐篇翻文档。","textChars":88,"textLines":3,"bbox":[98,246,310,174]}
+{"kind":"shape","id":"sh/nuxc3ylc","slide":3,"bbox":[456,188,350,246]}
+{"kind":"shape","id":"sh/36hcrmhk","slide":3,"bbox":[456,188,350,8]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":3,"text":"数据库诉求","textPreview":"数据库诉求","textChars":5,"textLines":1,"bbox":[476,206,310,32]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":3,"text":"• 要把用户、文档、标签、分类、问答、引用证据等数据结构化落库。\n• 要能清楚表达主键、外键、多表关联与实体之间的业务关系。\n• 要让一次问答能追溯到具体文档片段，并保留 Agent 执行记录。","textPreview":"• 要把用户、文档、标签、分类、问答、引用证据等数据结构化落库。 | • 要能清楚表达主键、外键、多表关联与实体之间的业务关系。 | • 要让一次问答能追溯到具体文档片段，并保留 Agent 执行记录。","textChars":97,"textLines":3,"bbox":[476,246,310,174]}
+{"kind":"shape","id":"sh/wra5gbq1","slide":3,"bbox":[834,188,366,246]}
+{"kind":"shape","id":"sh/7u54zido","slide":3,"bbox":[834,188,366,8]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":3,"text":"课程目标","textPreview":"课程目标","textChars":4,"textLines":1,"bbox":[854,206,326,32]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":3,"text":"• 不仅展示界面，更要展示完整的数据建模与关系模式设计。\n• 重点体现 MySQL 表设计、约束关系、CRUD 流程和 SQL 落库逻辑。\n• 在传统数据库系统基础上，扩展智能问答与检索增强能力。","textPreview":"• 不仅展示界面，更要展示完整的数据建模与关系模式设计。 | • 重点体现 MySQL 表设计、约束关系、CRUD 流程和 SQL 落库逻辑。 | • 在传统数据库系统基础上，扩展智能问答与检索增强能力。","textChars":98,"textLines":3,"bbox":[854,246,326,174]}
+{"kind":"shape","id":"sh/wfyxobm5","slide":3,"bbox":[82,468,1114,116]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":3,"text":"因此，本项目不是单纯做一个网页，而是围绕“知识如何入库、如何关联、如何检索、如何追溯”构建一个可演示的数据库系统应用。","textPreview":"因此，本项目不是单纯做一个网页，而是围绕“知识如何入库、如何关联、如何检索、如何追溯”构建一个可演示的数据库系统应用。","textChars":59,"textLines":1,"bbox":[108,494,1060,66]}
+{"kind":"notes","id":"nt/gz3xi8","slide":3,"text":""}
+{"kind":"slide","id":"sl/k1ui3k","slide":4,"title":"04","textShapes":18}
+{"kind":"textbox","id":"sh/i5sneloj","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/pwb2hwfy","slide":4,"text":"方案定位","textPreview":"方案定位","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/0bi9s36h","slide":4,"text":"建设目标与方案定位","textPreview":"建设目标与方案定位","textChars":9,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/7y1kre1w","slide":4,"text":"把课程中的数据建模、关系模式与系统实现真正落到一个可运行 Demo 上","textPreview":"把课程中的数据建模、关系模式与系统实现真正落到一个可运行 Demo 上","textChars":35,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/ed8v6psf","slide":4,"bbox":[84,188,248,156]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":4,"text":"目标一","textPreview":"目标一","textChars":3,"textLines":1,"bbox":[106,206,204,24]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":4,"text":"统一建模","textPreview":"统一建模","textChars":4,"textLines":1,"bbox":[106,236,204,42]}
+{"kind":"textbox","id":"sh/72x4nap4","slide":4,"text":"把知识管理主链路拆解为可落库、可关联、可扩展的实体关系结构","textPreview":"把知识管理主链路拆解为可落库、可关联、可扩展的实体关系结构","textChars":29,"textLines":1,"bbox":[106,282,204,54]}
+{"kind":"shape","id":"sh/ih4byhgn","slide":4,"bbox":[356,188,248,156]}
+{"kind":"textbox","id":"sh/032lszqt","slide":4,"text":"目标二","textPreview":"目标二","textChars":3,"textLines":1,"bbox":[378,206,204,24]}
+{"kind":"textbox","id":"sh/tovahoza","slide":4,"text":"完整闭环","textPreview":"完整闭环","textChars":4,"textLines":1,"bbox":[378,236,204,42]}
+{"kind":"textbox","id":"sh/ixczed8v","slide":4,"text":"实现文档上传、发布、检索、问答、引用、审计的端到端流程","textPreview":"实现文档上传、发布、检索、问答、引用、审计的端到端流程","textChars":27,"textLines":1,"bbox":[378,282,204,54]}
+{"kind":"shape","id":"sh/bi9s36hc","slide":4,"bbox":[628,188,248,156]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":4,"text":"目标三","textPreview":"目标三","textChars":3,"textLines":1,"bbox":[650,206,204,24]}
+{"kind":"textbox","id":"sh/p0bi9s36","slide":4,"text":"课程导向","textPreview":"课程导向","textChars":4,"textLines":1,"bbox":[650,236,204,42]}
+{"kind":"textbox","id":"sh/i9s36hcr","slide":4,"text":"让前端展示、后端接口与数据库表结构能够一一对应","textPreview":"让前端展示、后端接口与数据库表结构能够一一对应","textChars":23,"textLines":1,"bbox":[650,282,204,54]}
+{"kind":"shape","id":"sh/bulwval8","slide":4,"bbox":[900,188,298,156]}
+{"kind":"textbox","id":"sh/0je9cvix","slide":4,"text":"目标四","textPreview":"目标四","textChars":3,"textLines":1,"bbox":[922,206,254,24]}
+{"kind":"textbox","id":"sh/t47y1kre","slide":4,"text":"能力扩展","textPreview":"能力扩展","textChars":4,"textLines":1,"bbox":[922,236,254,42]}
+{"kind":"textbox","id":"sh/xobm58z2","slide":4,"text":"在 MySQL 主链路之上接入大模型问答与向量检索演示","textPreview":"在 MySQL 主链路之上接入大模型问答与向量检索演示","textChars":27,"textLines":1,"bbox":[922,282,254,54]}
+{"kind":"shape","id":"sh/83itgfml","slide":4,"bbox":[84,386,1112,176]}
+{"kind":"shape","id":"sh/fil0rqd4","slide":4,"bbox":[84,386,1112,8]}
+{"kind":"textbox","id":"sh/qxs72x4n","slide":4,"text":"方案说明","textPreview":"方案说明","textChars":4,"textLines":1,"bbox":[104,404,1072,32]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":4,"text":"• 系统定位为企业知识资产管理与智能检索平台，而不是单点 FAQ 工具。\n• 数据库设计优先保证实体清晰、关系清晰、主外键清晰，再考虑智能能力接入。\n• 汇报时既可以展示用户操作，也可以向老师展开说明底层表结构和 SQL 流程。","textPreview":"• 系统定位为企业知识资产管理与智能检索平台，而不是单点 FAQ 工具。 | • 数据库设计优先保证实体清晰、关系清晰、主外键清晰，再考虑智能能力接入。 | • 汇报时既可以展示用户操作，也可以向老师展开说明底层表结构和 SQL 流程。","textChars":114,"textLines":3,"bbox":[104,444,1072,104]}
+{"kind":"notes","id":"nt/k1ui3k","slide":4,"text":""}
+{"kind":"slide","id":"sl/7vvyed","slide":5,"title":"05","textShapes":16}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":5,"text":"技术路线","textPreview":"技术路线","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/3m94fu18","slide":5,"text":"系统架构与技术路线","textPreview":"系统架构与技术路线","textChars":9,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/sji5snel","slide":5,"text":"采用前后端分离 + MySQL 主存储 + 向量检索与大模型增强的组合方案","textPreview":"采用前后端分离 + MySQL 主存储 + 向量检索与大模型增强的组合方案","textChars":37,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/h4byhgn2","slide":5,"bbox":[82,194,244,206]}
+{"kind":"shape","id":"sh/adsji5sn","slide":5,"bbox":[82,194,244,8]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":5,"text":"前端展示层","textPreview":"前端展示层","textChars":5,"textLines":1,"bbox":[102,212,204,32]}
+{"kind":"textbox","id":"sh/svu9knih","slide":5,"text":"• React + TypeScript\n• 看板、文档中心、智能问答、Agent 记录\n• 用于展示核心业务流程与用户交互","textPreview":"• React + TypeScript | • 看板、文档中心、智能问答、Agent 记录 | • 用于展示核心业务流程与用户交互","textChars":62,"textLines":3,"bbox":[102,252,204,134]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[336,268,40,40]}
+{"kind":"shape","id":"sh/tgfmlkjm","slide":5,"bbox":[386,194,244,206]}
+{"kind":"shape","id":"sh/4vmtwra5","slide":5,"bbox":[386,194,244,8]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":5,"text":"后端接口层","textPreview":"后端接口层","textChars":5,"textLines":1,"bbox":[406,212,204,32]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":5,"text":"• Rust + Axum\n• 登录鉴权、文档 CRUD、问答接口、审计接口\n• 负责业务编排与数据一致性控制","textPreview":"• Rust + Axum | • 登录鉴权、文档 CRUD、问答接口、审计接口 | • 负责业务编排与数据一致性控制","textChars":55,"textLines":3,"bbox":[406,252,204,134]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[640,268,40,40]}
+{"kind":"shape","id":"sh/47y1kre1","slide":5,"bbox":[690,194,244,206]}
+{"kind":"shape","id":"sh/bm58z25k","slide":5,"bbox":[690,194,244,8]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":5,"text":"关系数据库层","textPreview":"关系数据库层","textChars":6,"textLines":1,"bbox":[710,212,204,32]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":5,"text":"• MySQL 作为主数据库\n• 承接实体数据、关系数据、行为记录和问答结果\n• 通过主键外键组织完整业务闭环","textPreview":"• MySQL 作为主数据库 | • 承接实体数据、关系数据、行为记录和问答结果 | • 通过主键外键组织完整业务闭环","textChars":55,"textLines":3,"bbox":[710,252,204,134]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":5,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[944,268,40,40]}
+{"kind":"shape","id":"sh/0je9cvix","slide":5,"bbox":[994,194,204,206]}
+{"kind":"shape","id":"sh/t47y1kre","slide":5,"bbox":[994,194,204,8]}
+{"kind":"textbox","id":"sh/idonyd0z","slide":5,"text":"智能增强层","textPreview":"智能增强层","textChars":5,"textLines":1,"bbox":[1014,212,164,32]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":5,"text":"• Qdrant 向量检索\n• 智谱大模型生成回答\n• MinIO 或本地镜像承接对象文件","textPreview":"• Qdrant 向量检索 | • 智谱大模型生成回答 | • MinIO 或本地镜像承接对象文件","textChars":45,"textLines":3,"bbox":[1014,252,164,134]}
+{"kind":"shape","id":"sh/0rqd4vmt","slide":5,"bbox":[84,430,1112,140]}
+{"kind":"textbox","id":"sh/tcj6tova","slide":5,"text":"整个系统的核心仍然是 MySQL。向量检索和大模型不是替代数据库，而是在数据库已经组织好知识结构的前提下，为检索与问答提供增强能力。","textPreview":"整个系统的核心仍然是 MySQL。向量检索和大模型不是替代数据库，而是在数据库已经组织好知识结构的前提下，为检索与问答提供增强能力。","textChars":66,"textLines":1,"bbox":[108,456,1060,88]}
+{"kind":"notes","id":"nt/7vvyed","slide":5,"text":""}
+{"kind":"slide","id":"sl/7xvg9z","slide":6,"title":"06","textShapes":8}
+{"kind":"textbox","id":"sh/bi9s36hc","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/032lszqt","slide":6,"text":"数据建模","textPreview":"数据建模","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/tovahoza","slide":6,"text":"E-R 图一：知识管理主链路","textPreview":"E-R 图一：知识管理主链路","textChars":14,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/i9s36hcr","slide":6,"text":"围绕用户、文档、分类、标签、版本与文件建立核心业务数据关系","textPreview":"围绕用户、文档、分类、标签、版本与文件建立核心业务数据关系","textChars":29,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/0fepkzup","slide":6,"bbox":[582,188,614,208]}
+{"kind":"shape","id":"sh/p0bi9s36","slide":6,"bbox":[582,188,614,8]}
+{"kind":"textbox","id":"sh/idonyd0z","slide":6,"text":"关系解读","textPreview":"关系解读","textChars":4,"textLines":1,"bbox":[602,206,574,32]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":6,"text":"• 用户发布文档，文档归属于一个分类，并可关联多个标签。\n• 文档与标签是多对多关系，因此通过中间表 document_tags 实现。\n• 每篇文档可对应多个历史版本，每个版本都保留快照信息。","textPreview":"• 用户发布文档，文档归属于一个分类，并可关联多个标签。 | • 文档与标签是多对多关系，因此通过中间表 document_tags 实现。 | • 每篇文档可对应多个历史版本，每个版本都保留快照信息。","textChars":97,"textLines":3,"bbox":[602,246,574,136]}
+{"kind":"shape","id":"sh/ra5gbq1o","slide":6,"bbox":[582,420,614,152]}
+{"kind":"shape","id":"sh/2p8nqxs7","slide":6,"bbox":[582,420,614,8]}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":6,"text":"汇报要点","textPreview":"汇报要点","textChars":4,"textLines":1,"bbox":[602,438,574,32]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":6,"text":"• 这一部分回答的是“知识从哪里来、如何组织、如何发布”的问题。\n• 它是整个数据库设计中最基础、最稳定的实体关系层。","textPreview":"• 这一部分回答的是“知识从哪里来、如何组织、如何发布”的问题。 | • 它是整个数据库设计中最基础、最稳定的实体关系层。","textChars":59,"textLines":2,"bbox":[602,478,574,80]}
+{"kind":"image","id":"im/uxc3ylc7","slide":6,"name":"","geometry":"roundRect","alt":"er1","bbox":[74,188,472,330]}
+{"kind":"notes","id":"nt/7xvg9z","slide":6,"text":""}
+{"kind":"slide","id":"sl/w520g7","slide":7,"title":"07","textShapes":8}
+{"kind":"textbox","id":"sh/m58z25kb","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":7,"text":"数据建模","textPreview":"数据建模","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":7,"text":"E-R 图二：问答追溯与 Agent 审计链路","textPreview":"E-R 图二：问答追溯与 Agent 审计链路","textChars":23,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":7,"text":"围绕问题、回答、引用片段、分段与 Agent 运行日志构建智能问答闭环","textPreview":"围绕问题、回答、引用片段、分段与 Agent 运行日志构建智能问答闭环","textChars":35,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/t83itgfm","slide":7,"bbox":[584,188,612,184]}
+{"kind":"shape","id":"sh/4nap4r65","slide":7,"bbox":[584,188,612,8]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":7,"text":"追溯逻辑","textPreview":"追溯逻辑","textChars":4,"textLines":1,"bbox":[604,206,572,32]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":7,"text":"• 一个用户可以提出多个问题，一个问题对应一个回答结果。\n• 一个回答可以引用多个证据片段，因此 answers 与 answer_citations 是一对多关系。\n• 每条引用又会指向 document_segments，从而追溯到具体文档内容。","textPreview":"• 一个用户可以提出多个问题，一个问题对应一个回答结果。 | • 一个回答可以引用多个证据片段，因此 answers 与 answer_citations 是一对多关系。 | • 每条引用又会指向 document_segments，从而追溯到具体文档内容。","textChars":125,"textLines":3,"bbox":[604,246,572,112]}
+{"kind":"shape","id":"sh/4byhgn29","slide":7,"bbox":[584,392,612,176]}
+{"kind":"shape","id":"sh/twra5gbq","slide":7,"bbox":[584,392,612,8]}
+{"kind":"textbox","id":"sh/m58z25kb","slide":7,"text":"审计价值","textPreview":"审计价值","textChars":4,"textLines":1,"bbox":[604,410,572,32]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":7,"text":"• Agent 运行记录用于保存检索、生成、发布等动作的执行信息。\n• 这一部分回答的是“答案从哪里来、是否可解释、是否可审计”的问题。","textPreview":"• Agent 运行记录用于保存检索、生成、发布等动作的执行信息。 | • 这一部分回答的是“答案从哪里来、是否可解释、是否可审计”的问题。","textChars":68,"textLines":2,"bbox":[604,450,572,104]}
+{"kind":"image","id":"im/jqh0fepk","slide":7,"name":"","geometry":"roundRect","alt":"er2","bbox":[78,188,472,326]}
+{"kind":"notes","id":"nt/w520g7","slide":7,"text":""}
+{"kind":"slide","id":"sl/mctwlu","slide":8,"title":"08","textShapes":13}
+{"kind":"textbox","id":"sh/sji5snel","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":8,"text":"关系模式","textPreview":"关系模式","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":8,"text":"关系模式与表分层设计","textPreview":"关系模式与表分层设计","textChars":10,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":8,"text":"由 16 张核心数据表共同支撑系统主链路","textPreview":"由 16 张核心数据表共同支撑系统主链路","textChars":20,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/s72x4nap","slide":8,"bbox":[82,190,252,224]}
+{"kind":"shape","id":"sh/3m94fu18","slide":8,"bbox":[82,190,252,8]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":8,"text":"基础主数据","textPreview":"基础主数据","textChars":5,"textLines":1,"bbox":[102,208,212,32]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":8,"text":"• roles(角色主档)\n• users(用户主档)\n• categories(分类主档)\n• tags(标签主档)","textPreview":"• roles(角色主档) | • users(用户主档) | • categories(分类主档) | • tags(标签主档)","textChars":59,"textLines":4,"bbox":[102,248,212,152]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":8,"bbox":[352,190,252,224]}
+{"kind":"shape","id":"sh/q1orytsv","slide":8,"bbox":[352,190,252,8]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":8,"text":"知识内容数据","textPreview":"知识内容数据","textChars":6,"textLines":1,"bbox":[372,208,212,32]}
+{"kind":"textbox","id":"sh/87ed8bat","slide":8,"text":"• document_files(源文件元数据)\n• documents(当前文档快照)\n• document_versions(历史版本快照)\n• document_tags(文档标签关系)","textPreview":"• document_files(源文件元数据) | • documents(当前文档快照) | • document_versions(历史版本快照) | • document_tags(文档标签关系)","textChars":96,"textLines":4,"bbox":[372,248,212,152]}
+{"kind":"shape","id":"sh/xs72x4na","slide":8,"bbox":[622,190,252,224]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":8,"bbox":[622,190,252,8]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":8,"text":"行为与问答数据","textPreview":"行为与问答数据","textChars":7,"textLines":1,"bbox":[642,208,212,32]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":8,"text":"• read_records(阅读记录)\n• favorite_records(收藏记录)\n• questions(问题表)\n• answers(回答表)\n• faq_items(FAQ 表)","textPreview":"• read_records(阅读记录) | • favorite_records(收藏记录) | • questions(问题表) | • answers(回答表) | • faq_items(FAQ 表)","textChars":96,"textLines":5,"bbox":[642,248,212,152]}
+{"kind":"shape","id":"sh/1gvy90je","slide":8,"bbox":[892,190,294,224]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":8,"bbox":[892,190,294,8]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":8,"text":"检索与审计数据","textPreview":"检索与审计数据","textChars":7,"textLines":1,"bbox":[912,208,254,32]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":8,"text":"• document_segments(文档分段)\n• answer_citations(回答引用证据)\n• agent_runs(Agent 运行记录)","textPreview":"• document_segments(文档分段) | • answer_citations(回答引用证据) | • agent_runs(Agent 运行记录)","textChars":77,"textLines":3,"bbox":[912,248,254,152]}
+{"kind":"shape","id":"sh/2t83itgf","slide":8,"bbox":[84,444,1112,122]}
+{"kind":"textbox","id":"sh/9knih4by","slide":8,"text":"关系模式设计遵循“强实体先落库、弱关系用外键、多对多拆中间表、可追溯链路单独建表”的原则，既满足数据库规范化要求，也支持后续功能扩展。","textPreview":"关系模式设计遵循“强实体先落库、弱关系用外键、多对多拆中间表、可追溯链路单独建表”的原则，既满足数据库规范化要求，也支持后续功能扩展。","textChars":67,"textLines":1,"bbox":[108,470,1060,76]}
+{"kind":"notes","id":"nt/mctwlu","slide":8,"text":""}
+{"kind":"slide","id":"sl/j4xvv0","slide":9,"title":"09","textShapes":10}
+{"kind":"textbox","id":"sh/knih4byh","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":9,"text":"功能展示","textPreview":"功能展示","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":9,"text":"前端功能界面展示","textPreview":"前端功能界面展示","textChars":8,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/d0z61032","slide":9,"text":"前端围绕数据库主链路组织页面，保证每个关键实体都能被看见、被操作、被追溯","textPreview":"前端围绕数据库主链路组织页面，保证每个关键实体都能被看见、被操作、被追溯","textChars":36,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/donyd0z6","slide":9,"bbox":[82,408,350,164]}
+{"kind":"shape","id":"sh/k3q5o7qp","slide":9,"bbox":[82,408,350,8]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":9,"text":"首页看板","textPreview":"首页看板","textChars":4,"textLines":1,"bbox":[102,426,310,32]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":9,"text":"• 展示文档总量、发布量、问答量与 Agent 运行数。\n• 通过聚合结果直观体现数据库中的统计数据。","textPreview":"• 展示文档总量、发布量、问答量与 Agent 运行数。 | • 通过聚合结果直观体现数据库中的统计数据。","textChars":51,"textLines":2,"bbox":[102,466,310,92]}
+{"kind":"shape","id":"sh/szqtcj6t","slide":9,"bbox":[462,408,350,164]}
+{"kind":"shape","id":"sh/lkjm1cfa","slide":9,"bbox":[462,408,350,8]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":9,"text":"文档中心","textPreview":"文档中心","textChars":4,"textLines":1,"bbox":[482,426,310,32]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":9,"text":"• 支持新增文档、编辑信息、发布版本、关联分类与标签。\n• 适合演示 documents、document_versions、document_tags 等表的变化。","textPreview":"• 支持新增文档、编辑信息、发布版本、关联分类与标签。 | • 适合演示 documents、document_versions、document_tags 等表的变化。","textChars":83,"textLines":2,"bbox":[482,466,310,92]}
+{"kind":"shape","id":"sh/sneloj2t","slide":9,"bbox":[842,408,350,164]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":9,"bbox":[842,408,350,8]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":9,"text":"智能问答与 Agent 记录","textPreview":"智能问答与 Agent 记录","textChars":14,"textLines":1,"bbox":[862,426,310,32]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":9,"text":"• 问答页展示提问、回答、引用证据与历史记录。\n• Agent 页展示摘要、问答、执行状态与审计链路。","textPreview":"• 问答页展示提问、回答、引用证据与历史记录。 | • Agent 页展示摘要、问答、执行状态与审计链路。","textChars":51,"textLines":2,"bbox":[862,466,310,92]}
+{"kind":"image","id":"im/dsji5sne","slide":9,"name":"","geometry":"roundRect","alt":"dashboard","bbox":[82,188,350,196]}
+{"kind":"image","id":"im/61032lsz","slide":9,"name":"","geometry":"roundRect","alt":"qa","bbox":[462,188,350,196]}
+{"kind":"image","id":"im/vmtwra5g","slide":9,"name":"","geometry":"roundRect","alt":"agent","bbox":[842,188,350,196]}
+{"kind":"notes","id":"nt/j4xvv0","slide":9,"text":""}
+{"kind":"slide","id":"sl/ctef9c","slide":10,"title":"10","textShapes":10}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/hk3q5o7q","slide":10,"text":"后端实现","textPreview":"后端实现","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":10,"text":"后端增删改查接口设计","textPreview":"后端增删改查接口设计","textChars":10,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":10,"text":"以后端路由为中心，展示数据库系统中的典型 CRUD 能力","textPreview":"以后端路由为中心，展示数据库系统中的典型 CRUD 能力","textChars":28,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/65wjudg7","slide":10,"bbox":[72,190,540,330]}
+{"kind":"textbox","id":"sh/hwfyxobm","slide":10,"text":"documents.rs","textPreview":"documents.rs","textChars":12,"textLines":1,"bbox":[88,202,508,24]}
+{"kind":"textbox","id":"sh/obm58z25","slide":10,"text":"pub async fn create_document(\n    State(state): State<AppState>,\n    headers: HeaderMap,\n    Json(payload): Json<CreateDocumentRequest>,\n) -> Result<(StatusCode, Json<ApiResponse<DocumentDetail>>), StatusCode> {\n    let user = require_content_manager(&headers, &state).await?;\n    let detail = state.store.create_document(user.user_id, payload).await;\n    Ok((StatusCode::CREATED, Json(ApiResponse::ok(\"document created\", detail))))\n}\n\npub async fn update_document(\n    Path(id): Path<u64>,\n    State(state): State<AppState>,\n    headers: HeaderMap,\n    Json(payload): Json<UpdateDocumentRequest>,\n) -> Result<Json<ApiResponse<DocumentDetail>>, StatusCode> {\n    let user = require_content_manager(&headers, &state).await?;\n    state\n        .store\n        .update_document(user.user_id, id, payload)\n        .await\n        .map(|item| Json(ApiResponse::ok(\"document updated\", item)))\n        .ok_or(StatusCode::NOT_FOUND)\n}\n\npub async fn publish_document(\n    Path(id): Path<u64>,\n    State(state): State<AppState>,","textPreview":"pub async fn create_document( |     State(state): State<AppState>, |     headers: HeaderMap, |     Json(payload): Json<CreateDocumentRequ...","textChars":1016,"textLines":28,"bbox":[88,232,508,274]}
+{"kind":"shape","id":"sh/zupwb2hw","slide":10,"bbox":[668,190,540,330]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":10,"text":"qa.rs","textPreview":"qa.rs","textChars":5,"textLines":1,"bbox":[684,202,508,24]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":10,"text":"pub async fn ask_question(\n    State(state): State<AppState>,\n    headers: HeaderMap,\n    Json(payload): Json<AskQuestionRequest>,\n) -> Result<Json<ApiResponse<QaAnswer>>, StatusCode> {\n    let user = require_user(&headers, &state).await?;\n    let answer = state.store.ask_question(user.user_id, payload.question_text).await;\n    Ok(Json(ApiResponse::ok(\"qa answered\", answer)))\n}\n\npub async fn list_question_history(\n    State(state): State<AppState>,\n    headers: HeaderMap,\n) -> Result<Json<ApiResponse<Vec<QuestionHistoryItem>>>, StatusCode> {\n    let user = require_user(&headers, &state).await?;\n    Ok(Json(ApiResponse::ok(\n        \"question history\",\n        state.store.list_question_history(user.user_id).await,\n    )))\n}","textPreview":"pub async fn ask_question( |     State(state): State<AppState>, |     headers: HeaderMap, |     Json(payload): Json<AskQuestionRequest>, ...","textChars":731,"textLines":20,"bbox":[684,232,508,274]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":10,"bbox":[72,540,1136,116]}
+{"kind":"shape","id":"sh/q5o7qpg3","slide":10,"bbox":[72,540,1136,8]}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":10,"text":"CRUD 对应关系","textPreview":"CRUD 对应关系","textChars":9,"textLines":1,"bbox":[92,558,1096,32]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":10,"text":"• 新增：创建文档、注册文件、写入 FAQ、提交问题、生成回答。\n• 查询：文档列表、文档详情、问答历史、Agent 记录、分类标签概览。\n• 修改：编辑文档、更新发布状态、重建分段索引、维护用户与角色信息。\n• 删除：按权限删除文档资源或重置测试数据，保证主外键约束不被破坏。","textPreview":"• 新增：创建文档、注册文件、写入 FAQ、提交问题、生成回答。 | • 查询：文档列表、文档详情、问答历史、Agent 记录、分类标签概览。 | • 修改：编辑文档、更新发布状态、重建分段索引、维护用户与角色信息。 | • 删除：按权限删除文档资源或重置测试数据，保证主外...","textChars":139,"textLines":4,"bbox":[92,598,1096,44]}
+{"kind":"notes","id":"nt/ctef9c","slide":10,"text":""}
+{"kind":"slide","id":"sl/a5oi80","slide":11,"title":"11","textShapes":12}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":11,"text":"数据库实现","textPreview":"数据库实现","textChars":5,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":11,"text":"后端落库链路与关键 SQL","textPreview":"后端落库链路与关键 SQL","textChars":13,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":11,"text":"从 MySQL 表结构与业务写入逻辑两侧展示数据库系统实现细节","textPreview":"从 MySQL 表结构与业务写入逻辑两侧展示数据库系统实现细节","textChars":31,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/wfyxobm5","slide":11,"bbox":[72,188,372,336]}
+{"kind":"textbox","id":"sh/7u54zido","slide":11,"text":"questions / answers","textPreview":"questions / answers","textChars":19,"textLines":1,"bbox":[88,200,340,24]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":11,"text":"        let insert_question = sqlx::query(\n            \"INSERT INTO questions (user_id, question_text, status, created_at) VALUES (?, ?, 'answered', UTC_TIMESTAMP())\",\n        )\n        .bind(user_id as i64)\n        .bind(&question_text)\n        .execute(tx.as_mut())\n        .await\n        .expect(\"insert question\");\n        let question_id = insert_question.last_insert_id() as i64;\n\n        let insert_answer = sqlx::query(\n            \"INSERT INTO answers (question_id, answer_text, confidence_score, model_name, status, latency_ms, created_at)\n             VALUES (?, ?, ?, ?, 'success', 120, UTC_TIMESTAMP())\",\n        )\n        .bind(question_id)\n        .bind(&answer_text)\n        .bind(confidence_score)\n        .bind(model_name)\n        .execute(tx.as_mut())\n        .await\n        .expect(\"insert answer\");\n        let answer_id = insert_answer.last_insert_id() as i64;\n\n        for citation in &citations {","textPreview":"let insert_question = sqlx::query( |             \"INSERT INTO questions (user_id, question_text, status, created_at) VALUES (?, ?, 'answe...","textChars":920,"textLines":24,"bbox":[88,230,340,280]}
+{"kind":"shape","id":"sh/psfil0rq","slide":11,"bbox":[454,188,372,336]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":11,"text":"answer_citations","textPreview":"answer_citations","textChars":16,"textLines":1,"bbox":[470,200,340,24]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":11,"text":"                \"INSERT INTO answer_citations (\n                    answer_id, document_id, version_id, segment_id, cite_order, score, snippet_text\n                 ) VALUES (?, ?, ?, ?, ?, ?, ?)\",\n            )\n            .bind(answer_id)\n            .bind(document_id)\n            .bind(version_id)\n            .bind(citation.segment_id.map(|value| value as i64))\n            .bind(citation.cite_order as i32)\n            .bind(citation.score)\n            .bind(&citation.snippet_text)\n            .execute(tx.as_mut())\n            .await\n            .expect(\"insert citation\");\n        }\n\n        let meta_json = if llm_answer.is_some() {\n            format!(\"{{\\\"provider\\\":\\\"zhipu\\\",\\\"citation_count\\\":{}}}\", citations.len())\n        } else {\n            format!(\"{{\\\"provider\\\":\\\"demo-rag\\\",\\\"citation_count\\\":{}}}\", citations.len())","textPreview":"\"INSERT INTO answer_citations ( |                     answer_id, document_id, version_id, segment_id, cite_order, score, snippet_text |  ...","textChars":840,"textLines":20,"bbox":[470,230,340,280]}
+{"kind":"shape","id":"sh/36hcrmhk","slide":11,"bbox":[836,188,372,336]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":11,"text":"agent_runs","textPreview":"agent_runs","textChars":10,"textLines":1,"bbox":[852,200,340,24]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":11,"text":"            \"INSERT INTO agent_runs (\n                agent_type, trigger_type, operator_user_id, document_id, version_id, question_id, answer_id, status, input_text, output_text, meta_json, started_at, finished_at\n             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())\",\n        )\n        .bind(agent_type)\n        .bind(trigger_type)\n        .bind(operator_user_id as i64)\n        .bind(document_id)\n        .bind(version_id)\n        .bind(question_id)\n        .bind(answer_id)\n        .bind(status)\n        .bind(input_text)\n        .bind(output_text)\n        .bind(meta_json)\n        .execute(tx.as_mut())\n        .await?;\n","textPreview":"\"INSERT INTO agent_runs ( |                 agent_type, trigger_type, operator_user_id, document_id, version_id, question_id, answer_id, ...","textChars":662,"textLines":18,"bbox":[852,230,340,280]}
+{"kind":"shape","id":"sh/ed8bat47","slide":11,"bbox":[72,544,1136,112]}
+{"kind":"shape","id":"sh/7u54zido","slide":11,"bbox":[72,544,1136,8]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":11,"text":"数据库说明","textPreview":"数据库说明","textChars":5,"textLines":1,"bbox":[92,562,1096,32]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":11,"text":"• 001_init.sql 定义了 16 张核心表，是整个系统的数据库骨架。\n• mysql.rs 中把问题、回答、引用证据和 Agent 记录分别写入不同关系表。\n• 通过外键约束保证问题、回答、片段引用和文档之间的关系始终一致。","textPreview":"• 001_init.sql 定义了 16 张核心表，是整个系统的数据库骨架。 | • mysql.rs 中把问题、回答、引用证据和 Agent 记录分别写入不同关系表。 | • 通过外键约束保证问题、回答、片段引用和文档之间的关系始终一致。","textChars":117,"textLines":3,"bbox":[92,602,1096,40]}
+{"kind":"notes","id":"nt/a5oi80","slide":11,"text":""}
+{"kind":"slide","id":"sl/0euog2","slide":12,"title":"12","textShapes":13}
+{"kind":"textbox","id":"sh/sji5snel","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":12,"text":"系统亮点","textPreview":"系统亮点","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":12,"text":"系统亮点与课程价值","textPreview":"系统亮点与课程价值","textChars":9,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":12,"text":"在数据库系统主线之上，加入可解释、可审计、可扩展的智能能力","textPreview":"在数据库系统主线之上，加入可解释、可审计、可扩展的智能能力","textChars":29,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/s72x4nap","slide":12,"bbox":[84,194,344,188]}
+{"kind":"shape","id":"sh/3m94fu18","slide":12,"bbox":[84,194,344,8]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":12,"text":"AI 问答增强","textPreview":"AI 问答增强","textChars":7,"textLines":1,"bbox":[104,212,304,32]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":12,"text":"• 接入智谱大模型，用自然语言回答企业知识问题。\n• 不是直接自由生成，而是先检索再作答，强调数据库与知识库支撑作用。","textPreview":"• 接入智谱大模型，用自然语言回答企业知识问题。 | • 不是直接自由生成，而是先检索再作答，强调数据库与知识库支撑作用。","textChars":59,"textLines":2,"bbox":[104,252,304,116]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":12,"bbox":[456,194,344,188]}
+{"kind":"shape","id":"sh/q1orytsv","slide":12,"bbox":[456,194,344,8]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":12,"text":"证据可追溯","textPreview":"证据可追溯","textChars":5,"textLines":1,"bbox":[476,212,304,32]}
+{"kind":"textbox","id":"sh/87ed8bat","slide":12,"text":"• 回答结果不是黑盒输出，每个答案都可以回溯到引用片段。\n• answer_citations 与 document_segments 共同完成“答案有依据”的证明。","textPreview":"• 回答结果不是黑盒输出，每个答案都可以回溯到引用片段。 | • answer_citations 与 document_segments 共同完成“答案有依据”的证明。","textChars":83,"textLines":2,"bbox":[476,252,304,116]}
+{"kind":"shape","id":"sh/xs72x4na","slide":12,"bbox":[828,194,360,188]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":12,"bbox":[828,194,360,8]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":12,"text":"工程可演示","textPreview":"工程可演示","textChars":5,"textLines":1,"bbox":[848,212,320,32]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":12,"text":"• 本地可运行、前后端可联调、MySQL 可直接查看数据变化。\n• 既满足课程展示，也为后续扩展 Redis、Qdrant、对象存储留出接口。","textPreview":"• 本地可运行、前后端可联调、MySQL 可直接查看数据变化。 | • 既满足课程展示，也为后续扩展 Redis、Qdrant、对象存储留出接口。","textChars":71,"textLines":2,"bbox":[848,252,320,116]}
+{"kind":"shape","id":"sh/1gvy90je","slide":12,"bbox":[84,420,1116,150]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":12,"bbox":[84,420,1116,8]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":12,"text":"结构化约束","textPreview":"结构化约束","textChars":5,"textLines":1,"bbox":[104,438,1076,32]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":12,"text":"• 通过主键、外键和中间表把核心实体关系落到数据库中。\n• 外键分布：documents 含 3 个外键；document_versions 含 3 个外键；answer_citations 含 4 个外键；agent_runs 含 5 个外键\n• 数据库层面的设计直接支撑上层检索、问答与审计能力。","textPreview":"• 通过主键、外键和中间表把核心实体关系落到数据库中。 | • 外键分布：documents 含 3 个外键；document_versions 含 3 个外键；answer_citations 含 4 个外键；agent_runs 含 5 个外键 | • 数据库层面的设计...","textChars":150,"textLines":3,"bbox":[104,478,1076,78]}
+{"kind":"shape","id":"sh/2t83itgf","slide":12,"bbox":[84,586,1116,68]}
+{"kind":"textbox","id":"sh/9knih4by","slide":12,"text":"课程层面的价值在于：它把抽象的 E-R 图、关系模式、SQL 约束和现代智能问答系统真正串成了一条完整链路。","textPreview":"课程层面的价值在于：它把抽象的 E-R 图、关系模式、SQL 约束和现代智能问答系统真正串成了一条完整链路。","textChars":54,"textLines":1,"bbox":[110,606,1060,28]}
+{"kind":"notes","id":"nt/0euog2","slide":12,"text":""}
+{"kind":"slide","id":"sl/yvso7e","slide":13,"title":"13","textShapes":11}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[70,36,70,28]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":13,"text":"项目总结","textPreview":"项目总结","textChars":4,"textLines":1,"bbox":[152,34,240,28]}
+{"kind":"textbox","id":"sh/7u54zido","slide":13,"text":"项目总结","textPreview":"项目总结","textChars":4,"textLines":1,"bbox":[74,84,760,52]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":13,"text":"从需求分析到数据库设计，再到系统实现与智能扩展，形成完整汇报闭环","textPreview":"从需求分析到数据库设计，再到系统实现与智能扩展，形成完整汇报闭环","textChars":32,"textLines":1,"bbox":[76,138,1120,40]}
+{"kind":"shape","id":"sh/lc7u54zi","slide":13,"bbox":[84,202,340,176]}
+{"kind":"shape","id":"sh/eloj2t83","slide":13,"bbox":[84,202,340,8]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":13,"text":"数据库价值","textPreview":"数据库价值","textChars":5,"textLines":1,"bbox":[104,220,300,32]}
+{"kind":"textbox","id":"sh/wval87ed","slide":13,"text":"• 通过实体关系建模，让知识、用户、行为与问答数据形成统一结构。\n• 通过主外键和中间表，把复杂业务关系表达得清楚且可维护。","textPreview":"• 通过实体关系建模，让知识、用户、行为与问答数据形成统一结构。 | • 通过主外键和中间表，把复杂业务关系表达得清楚且可维护。","textChars":62,"textLines":2,"bbox":[104,260,300,104]}
+{"kind":"shape","id":"sh/pg3ex0nu","slide":13,"bbox":[464,202,360,176]}
+{"kind":"shape","id":"sh/loj2t83i","slide":13,"bbox":[464,202,360,8]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":13,"text":"系统价值","textPreview":"系统价值","textChars":4,"textLines":1,"bbox":[484,220,320,32]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":13,"text":"• 前端界面、后端接口和数据库表结构之间形成一一对应关系。\n• 不仅能演示“能用”，还可以解释“为什么这样设计”。","textPreview":"• 前端界面、后端接口和数据库表结构之间形成一一对应关系。 | • 不仅能演示“能用”，还可以解释“为什么这样设计”。","textChars":57,"textLines":2,"bbox":[484,260,320,104]}
+{"kind":"shape","id":"sh/ex0nuxc3","slide":13,"bbox":[844,202,340,176]}
+{"kind":"shape","id":"sh/lwval87e","slide":13,"bbox":[844,202,340,8]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":13,"text":"扩展价值","textPreview":"扩展价值","textChars":4,"textLines":1,"bbox":[864,220,300,32]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":13,"text":"• 后续可以继续引入触发器、存储过程、权限细化和真实向量检索优化。\n• 现有架构已经为数据库课程进一步深化提供了稳定基础。","textPreview":"• 后续可以继续引入触发器、存储过程、权限细化和真实向量检索优化。 | • 现有架构已经为数据库课程进一步深化提供了稳定基础。","textChars":61,"textLines":2,"bbox":[864,260,300,104]}
+{"kind":"shape","id":"sh/e9cvixcz","slide":13,"bbox":[86,420,1110,164]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":13,"text":"知枢项目把需求分析、E-R 图、关系模式、SQL 落库与智能问答扩展整合成了一个可运行、可解释、可展示的数据库系统课程实践成果。","textPreview":"知枢项目把需求分析、E-R 图、关系模式、SQL 落库与智能问答扩展整合成了一个可运行、可解释、可展示的数据库系统课程实践成果。","textChars":64,"textLines":1,"bbox":[116,450,1044,110]}
+{"kind":"notes","id":"nt/yvso7e","slide":13,"text":""}

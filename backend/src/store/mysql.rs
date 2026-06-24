@@ -1,9 +1,10 @@
-use async_trait::async_trait;
+﻿use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::migrate::Migrator;
 use sqlx::{MySql, MySqlPool, Row, Transaction};
 
 use crate::{
+    llm::generate_answer,
     models::{
         AgentRun, CategoryItem, CategoryUpsertRequest, Citation, CreateDocumentRequest,
         DashboardSummary, DeletedResource, DocumentDetail, DocumentFileMeta, DocumentListItem,
@@ -82,97 +83,9 @@ impl MySqlStore {
         .execute(&self.pool)
         .await?;
 
-        let document_count =
-            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM documents")
-                .fetch_one(&self.pool)
-                .await?;
-        if document_count == 0 {
-            let mut tx = self.pool.begin().await?;
-            let category_id = Self::ensure_category(&mut tx, "制度流程").await?;
-
-            let insert_document = sqlx::query(
-                "INSERT INTO documents (
-                    category_id, creator_id, current_version_no, title, summary, status, published_at, created_at, updated_at
-                 ) VALUES (?, 1, 'v1.0.0', ?, ?, 'published', UTC_TIMESTAMP(), UTC_TIMESTAMP(), UTC_TIMESTAMP())",
-            )
-            .bind(category_id)
-            .bind("数据库权限申请流程")
-            .bind("用于说明企业内部数据库权限申请的标准流程。")
-            .execute(tx.as_mut())
-            .await?;
-            let document_id = insert_document.last_insert_id() as i64;
-
-            let insert_version = sqlx::query(
-                "INSERT INTO document_versions (
-                    document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
-                 ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, 1, 1, UTC_TIMESTAMP())",
-            )
-            .bind(document_id)
-            .bind("数据库权限申请流程")
-            .bind("1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。")
-            .bind("用于说明企业内部数据库权限申请的标准流程。")
-            .bind("初始版本")
-            .execute(tx.as_mut())
-            .await?;
-            let version_id = insert_version.last_insert_id() as i64;
-
-            sqlx::query(
-                "UPDATE documents
-                 SET current_version_id = ?, updated_at = UTC_TIMESTAMP()
-                 WHERE document_id = ?",
-            )
-            .bind(version_id)
-            .bind(document_id)
-            .execute(tx.as_mut())
-            .await?;
-
-            Self::replace_document_segments(
-                &mut tx,
-                document_id,
-                version_id,
-                "1. 提交权限申请单。\n2. 直属主管审批。\n3. DBA 审核后开通只读账号。",
-            )
-            .await?;
-
-            Self::replace_document_tags(
-                &mut tx,
-                document_id,
-                &[
-                    "数据库".to_string(),
-                    "权限".to_string(),
-                    "流程".to_string(),
-                ],
-            )
-            .await?;
-            Self::replace_document_faq(
-                &mut tx,
-                document_id,
-                "数据库权限申请流程",
-                "用于说明企业内部数据库权限申请的标准流程。",
-            )
-            .await?;
-            Self::create_agent_run(
-                &mut tx,
-                1,
-                "summary",
-                "document_publish",
-                Some(document_id),
-                Some(version_id),
-                None,
-                None,
-                "success",
-                "数据库权限申请流程",
-                "摘要已生成",
-                Some("{\"source\":\"bootstrap\"}"),
-            )
-            .await?;
-
-            tx.commit().await?;
-        }
-
+        self.ensure_bootstrap_documents().await?;
         Ok(())
     }
-
     async fn backfill_document_segments(&self) -> Result<(), sqlx::Error> {
         let rows = sqlx::query(
             "SELECT d.document_id, d.current_version_id, dv.content
@@ -207,6 +120,237 @@ impl MySqlStore {
         }
         tx.commit().await?;
         Ok(())
+    }
+
+
+    fn bootstrap_documents() -> Vec<(&'static str, &'static str, &'static str, &'static str, Vec<&'static str>, &'static str, &'static str)> {
+        vec![
+            (
+                "生产库只读权限申请流程",
+                "规范研发、数据分析和运营人员申请生产数据库只读权限的审批流程与最小权限原则。",
+                "1. 申请人需在 IT 服务台提交《生产库权限申请单》，写明系统名称、库表范围、使用场景和截止日期。\n2. 直属主管审批业务必要性，数据负责人确认字段范围，DBA 复核账号权限级别。\n3. 默认只开通只读账号，权限有效期最长 90 天，到期需重新申请。\n4. 涉及用户隐私字段时，必须先完成脱敏方案确认，再发放查询权限。",
+                "制度流程",
+                vec!["数据库", "权限", "生产环境", "审批"],
+                "生产库只读权限申请要经过哪些审批？",
+                "需要依次经过直属主管、数据负责人和 DBA 审批，默认只开通只读权限，且权限有效期最长 90 天。"
+            ),
+            (
+                "数据导出与脱敏规范",
+                "约束内部数据导出的审批边界、脱敏要求和留痕要求。",
+                "1. 导出客户、订单、财务等敏感数据前，必须标注用途、接收人和保存期限。\n2. 手机号、身份证号、邮箱等个人信息默认按脱敏规则导出，未经批准不得提供明文。\n3. 导出结果必须存放到公司指定加密目录，不得通过个人聊天工具外发。\n4. 高敏数据导出需要安全负责人追加审批，并在导出后 24 小时内登记审计记录。",
+                "数据安全",
+                vec!["数据安全", "脱敏", "审计"],
+                "哪些数据导出场景必须做脱敏？",
+                "凡是涉及手机号、身份证号、邮箱等个人信息的导出，默认必须做脱敏；高敏数据还需要安全负责人追加审批。"
+            ),
+            (
+                "发版变更与回滚SOP",
+                "统一应用系统发版前检查、灰度验证和回滚要求。",
+                "1. 发版前必须完成测试报告、数据库变更脚本评审和回滚方案确认。\n2. 生产发版统一安排在变更窗口执行，操作人和复核人不能为同一人。\n3. 若核心指标异常或错误率连续 5 分钟超阈值，应立即执行回滚并通知值班群。\n4. 发版结束后 30 分钟内补齐变更单、影响范围和结论记录。",
+                "运维规范",
+                vec!["发版", "回滚", "变更管理"],
+                "什么时候需要立即回滚版本？",
+                "当核心指标异常或错误率连续 5 分钟超出阈值时，应立即执行回滚，并同步通知值班群。"
+            ),
+            (
+                "新员工入职账号开通清单",
+                "梳理员工入职首日必须开通的系统账号、权限归属和责任人。",
+                "1. HR 在入职前两个工作日提交入职工单，包含部门、岗位、直属主管和办公地点。\n2. IT 在入职当天 12 点前开通企业邮箱、OA、即时通讯和 VPN 账号。\n3. 研发岗位如需代码仓库、流水线和数据库权限，必须由直属主管按岗位模板发起二次申请。\n4. 所有账号需绑定企业 MFA，多次登录失败由服务台统一重置。",
+                "人事与行政",
+                vec!["入职", "账号", "MFA"],
+                "新员工首日默认会开通哪些账号？",
+                "默认开通企业邮箱、OA、即时通讯和 VPN；研发相关的代码仓库、流水线和数据库权限需要直属主管二次申请。"
+            ),
+            (
+                "VPN远程接入管理办法",
+                "说明远程办公场景下 VPN 账号申请、双因素认证和例外审批要求。",
+                "1. 员工申请 VPN 时需填写远程办公原因、使用周期和终端设备信息。\n2. VPN 账号必须绑定企业 MFA，禁止多人共用同一账号。\n3. 海外访问、外包人员访问和生产环境跳板访问属于高风险场景，需要安全经理审批。\n4. 连续 30 天未使用的 VPN 账号将自动停用，恢复使用需重新提交申请。",
+                "运维规范",
+                vec!["VPN", "远程办公", "安全"],
+                "哪些 VPN 场景需要额外审批？",
+                "海外访问、外包人员访问以及生产环境跳板访问都属于高风险场景，需要安全经理额外审批。"
+            ),
+        ]
+    }
+    async fn ensure_bootstrap_documents(&self) -> Result<(), sqlx::Error> {
+        for (title, summary, content, category_name, tags, faq_question, faq_answer) in Self::bootstrap_documents() {
+            let mut tx = self.pool.begin().await?;
+            let category_id = Self::ensure_category(&mut tx, category_name).await?;
+
+            let existing = sqlx::query(
+                "SELECT document_id, current_version_id FROM documents WHERE title = ? LIMIT 1",
+            )
+            .bind(title)
+            .fetch_optional(tx.as_mut())
+            .await?;
+
+            let document_id = if let Some(row) = existing {
+                let document_id = row.get::<i64, _>("document_id");
+                let current_version_id = row.try_get::<Option<i64>, _>("current_version_id").ok().flatten();
+
+                sqlx::query(
+                    "UPDATE documents
+                     SET category_id = ?, title = ?, summary = ?, status = 'published', current_version_no = 'v1.0.0',
+                         published_at = COALESCE(published_at, UTC_TIMESTAMP()), updated_at = UTC_TIMESTAMP()
+                     WHERE document_id = ?",
+                )
+                .bind(category_id)
+                .bind(title)
+                .bind(summary)
+                .bind(document_id)
+                .execute(tx.as_mut())
+                .await?;
+
+                let version_id = if let Some(version_id) = current_version_id {
+                    let segments_are_referenced = Self::bootstrap_segments_are_referenced(&mut tx, document_id, version_id).await?;
+
+                    if !segments_are_referenced {
+                        sqlx::query(
+                            "UPDATE document_versions
+                             SET version_no = 'v1.0.0', title = ?, content = ?, summary = ?, change_note = ?,
+                                 is_published_snapshot = 1, created_by = 1
+                             WHERE version_id = ?",
+                        )
+                        .bind(title)
+                        .bind(content)
+                        .bind(summary)
+                        .bind("初始化演示文档")
+                        .bind(version_id)
+                        .execute(tx.as_mut())
+                        .await?;
+                    }
+                    version_id
+                } else {
+                    let insert_version = sqlx::query(
+                        "INSERT INTO document_versions (
+                            document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
+                         ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, 1, 1, UTC_TIMESTAMP())",
+                    )
+                    .bind(document_id)
+                    .bind(title)
+                    .bind(content)
+                    .bind(summary)
+                    .bind("初始化演示文档")
+                    .execute(tx.as_mut())
+                    .await?;
+                    insert_version.last_insert_id() as i64
+                };
+
+                sqlx::query(
+                    "UPDATE documents SET current_version_id = ?, updated_at = UTC_TIMESTAMP() WHERE document_id = ?",
+                )
+                .bind(version_id)
+                .bind(document_id)
+                .execute(tx.as_mut())
+                .await?;
+
+                if !Self::bootstrap_segments_are_referenced(&mut tx, document_id, version_id).await? {
+                    Self::replace_document_segments(&mut tx, document_id, version_id, content).await?;
+                }
+                document_id
+            } else {
+                let insert_document = sqlx::query(
+                    "INSERT INTO documents (
+                        category_id, creator_id, current_version_no, title, summary, status, published_at, created_at, updated_at
+                     ) VALUES (?, 1, 'v1.0.0', ?, ?, 'published', UTC_TIMESTAMP(), UTC_TIMESTAMP(), UTC_TIMESTAMP())",
+                )
+                .bind(category_id)
+                .bind(title)
+                .bind(summary)
+                .execute(tx.as_mut())
+                .await?;
+                let document_id = insert_document.last_insert_id() as i64;
+
+                let insert_version = sqlx::query(
+                    "INSERT INTO document_versions (
+                        document_id, version_no, title, content, summary, change_note, is_published_snapshot, created_by, created_at
+                     ) VALUES (?, 'v1.0.0', ?, ?, ?, ?, 1, 1, UTC_TIMESTAMP())",
+                )
+                .bind(document_id)
+                .bind(title)
+                .bind(content)
+                .bind(summary)
+                .bind("初始化演示文档")
+                .execute(tx.as_mut())
+                .await?;
+                let version_id = insert_version.last_insert_id() as i64;
+
+                sqlx::query(
+                    "UPDATE documents SET current_version_id = ?, updated_at = UTC_TIMESTAMP() WHERE document_id = ?",
+                )
+                .bind(version_id)
+                .bind(document_id)
+                .execute(tx.as_mut())
+                .await?;
+
+                Self::replace_document_segments(&mut tx, document_id, version_id, content).await?;
+                document_id
+            };
+
+            let version_id = sqlx::query_scalar::<_, i64>(
+                "SELECT current_version_id FROM documents WHERE document_id = ?",
+            )
+            .bind(document_id)
+            .fetch_one(tx.as_mut())
+            .await?;
+
+            Self::replace_document_tags(
+                &mut tx,
+                document_id,
+                &tags.iter().map(|item| item.to_string()).collect::<Vec<_>>(),
+            )
+            .await?;
+            Self::replace_document_faq_item(&mut tx, document_id, faq_question, faq_answer).await?;
+
+            sqlx::query(
+                "DELETE FROM agent_runs
+                 WHERE document_id = ? AND trigger_type = 'document_publish' AND meta_json = ?",
+            )
+            .bind(document_id)
+            .bind(r#"{"source":"bootstrap"}"#)
+            .execute(tx.as_mut())
+            .await?;
+
+            Self::create_agent_run(
+                &mut tx,
+                1,
+                "summary",
+                "document_publish",
+                Some(document_id),
+                Some(version_id),
+                None,
+                None,
+                "success",
+                title,
+                "演示知识已初始化",
+                Some(r#"{"source":"bootstrap"}"#),
+            )
+            .await?;
+
+            tx.commit().await?;
+        }
+
+        Ok(())
+    }
+
+    async fn bootstrap_segments_are_referenced(
+        tx: &mut Transaction<'_, MySql>,
+        document_id: i64,
+        version_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        let count = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*)
+             FROM answer_citations ac
+             JOIN document_segments ds ON ds.segment_id = ac.segment_id
+             WHERE ds.document_id = ?
+               AND ds.version_id = ?",
+        )
+        .bind(document_id)
+        .bind(version_id)
+        .fetch_one(tx.as_mut())
+        .await?;
+
+        Ok(count > 0)
     }
 
     async fn ensure_category(
@@ -268,6 +412,29 @@ impl MySqlStore {
                 .execute(tx.as_mut())
                 .await?;
         }
+
+        Ok(())
+    }
+
+    async fn replace_document_faq_item(
+        tx: &mut Transaction<'_, MySql>,
+        document_id: i64,
+        question: &str,
+        answer: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM faq_items WHERE document_id = ?")
+            .bind(document_id)
+            .execute(tx.as_mut())
+            .await?;
+
+        sqlx::query(
+            "INSERT INTO faq_items (document_id, question, answer, status) VALUES (?, ?, ?, 'active')",
+        )
+        .bind(document_id)
+        .bind(question)
+        .bind(answer)
+        .execute(tx.as_mut())
+        .await?;
 
         Ok(())
     }
@@ -339,6 +506,14 @@ impl MySqlStore {
             .enumerate()
             .map(|(index, line)| ((index + 1) as u32, line.to_string(), line.chars().count() as u32))
             .collect()
+    }
+
+    fn first_line(text: &str) -> String {
+        text.lines()
+            .map(str::trim)
+            .find(|line| !line.is_empty())
+            .unwrap_or("内容为空")
+            .to_string()
     }
 
     fn search_score(question: &str, text: &str) -> usize {
@@ -1118,40 +1293,100 @@ impl AppStore for MySqlStore {
                ON ds.document_id = d.document_id
               AND ds.version_id = d.current_version_id
              WHERE d.status <> 'archived'
-             ORDER BY
-               d.document_id DESC,
-               ds.chunk_order ASC",
+             ORDER BY d.document_id DESC, ds.chunk_order ASC",
         )
         .fetch_all(tx.as_mut())
         .await
         .expect("load context document");
-        let best_row = candidate_rows
+
+        let mut citations = candidate_rows
             .iter()
-            .max_by_key(|row| {
-                let chunk_text = row
-                    .try_get::<Option<String>, _>("chunk_text")
+            .map(|row| {
+                let document_title = row.get::<String, _>("title");
+                let version_no = row
+                    .try_get::<Option<String>, _>("current_version_no")
+                    .ok()
+                    .flatten()
+                    .unwrap_or_else(|| "v0".to_string());
+                let content = row
+                    .try_get::<Option<String>, _>("content")
                     .ok()
                     .flatten()
                     .unwrap_or_default();
-                let score = Self::search_score(&question_text, &chunk_text);
-                let segment_priority = row
-                    .try_get::<Option<i64>, _>("segment_id")
+                let snippet_text = row
+                    .try_get::<Option<String>, _>("chunk_text")
                     .ok()
                     .flatten()
-                    .map(|_| 1_i64)
-                    .unwrap_or(0);
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or_else(|| Self::first_line(&content));
+                let score = Self::search_score(&question_text, &snippet_text) as f32;
                 (
                     score,
-                    segment_priority,
                     row.get::<i64, _>("document_id"),
-                    -row.try_get::<Option<i32>, _>("chunk_order").ok().flatten().unwrap_or(0) as i64,
+                    row.try_get::<Option<i32>, _>("chunk_order").ok().flatten().unwrap_or(0),
+                    Citation {
+                        cite_order: 0,
+                        segment_id: row.try_get::<Option<i64>, _>("segment_id").ok().flatten().map(|value| value as u64),
+                        document_title,
+                        version_no,
+                        snippet_text,
+                        score: (score / 10.0).min(0.99),
+                    },
+                )
+            })
+            .filter(|(score, _, _, citation)| *score > 0.0 || !citation.snippet_text.trim().is_empty())
+            .collect::<Vec<_>>();
+
+        citations.sort_by(|left, right| {
+            right
+                .0
+                .partial_cmp(&left.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| right.1.cmp(&left.1))
+                .then_with(|| left.2.cmp(&right.2))
+        });
+
+        let mut citations = citations
+            .into_iter()
+            .take(3)
+            .enumerate()
+            .map(|(index, (_, _, _, mut citation))| {
+                citation.cite_order = (index + 1) as u32;
+                citation
+            })
+            .collect::<Vec<_>>();
+
+        if citations.is_empty() {
+            citations.push(Citation {
+                cite_order: 1,
+                segment_id: None,
+                document_title: "知识库演示文档".to_string(),
+                version_no: "v0".to_string(),
+                snippet_text: "当前未找到高置信度证据，请尝试提出更具体的问题。".to_string(),
+                score: 0.0,
+            });
+        }
+
+        let llm_answer = generate_answer(&question_text, &citations).await;
+        let answer_text = llm_answer
+            .as_ref()
+            .map(|item| item.answer_text.clone())
+            .unwrap_or_else(|| {
+                let top = &citations[0];
+                format!(
+                    "根据当前知识库，最匹配的证据来自 {}：{}",
+                    top.document_title,
+                    top.snippet_text
                 )
             });
-
-        let answer_text = format!(
-            "根据当前知识库，关于“{}”的建议处理方式是：先走标准申请流程，再由对应管理员审核开通。",
-            question_text
-        );
+        let confidence_score = llm_answer
+            .as_ref()
+            .map(|item| item.confidence_score)
+            .unwrap_or(if citations[0].score > 0.0 { 0.84 } else { 0.58 });
+        let model_name = llm_answer
+            .as_ref()
+            .map(|item| item.model_name.as_str())
+            .unwrap_or("demo-rag-agent");
 
         let insert_question = sqlx::query(
             "INSERT INTO questions (user_id, question_text, status, created_at) VALUES (?, ?, 'answered', UTC_TIMESTAMP())",
@@ -1165,72 +1400,81 @@ impl AppStore for MySqlStore {
 
         let insert_answer = sqlx::query(
             "INSERT INTO answers (question_id, answer_text, confidence_score, model_name, status, latency_ms, created_at)
-             VALUES (?, ?, 0.88, 'demo-rag-agent', 'success', 120, UTC_TIMESTAMP())",
+             VALUES (?, ?, ?, ?, 'success', 120, UTC_TIMESTAMP())",
         )
         .bind(question_id)
         .bind(&answer_text)
+        .bind(confidence_score)
+        .bind(model_name)
         .execute(tx.as_mut())
         .await
         .expect("insert answer");
         let answer_id = insert_answer.last_insert_id() as i64;
 
-        let mut citations = Vec::new();
-        if let Some(doc) = best_row {
-            let document_id = doc.get::<i64, _>("document_id");
-            let document_title = doc.get::<String, _>("title");
-            let version_id = doc.try_get::<Option<i64>, _>("current_version_id").ok().flatten().unwrap_or(0);
-            let version_no = doc
-                .try_get::<Option<String>, _>("current_version_no")
-                .ok()
-                .flatten()
-                .unwrap_or_else(|| "v0".to_string());
-            let content = doc
-                .try_get::<Option<String>, _>("content")
-                .ok()
-                .flatten()
-                .unwrap_or_default();
-            let segment_id = doc.try_get::<Option<i64>, _>("segment_id").ok().flatten();
-            let snippet_text = doc
-                .try_get::<Option<String>, _>("chunk_text")
-                .ok()
-                .flatten()
-                .filter(|value| !value.is_empty())
-                .unwrap_or_else(|| content.lines().next().unwrap_or_default().to_string());
+        for citation in &citations {
+            let source_row = candidate_rows.iter().find(|row| {
+                row.get::<String, _>("title") == citation.document_title
+                    && row
+                        .try_get::<Option<String>, _>("current_version_no")
+                        .ok()
+                        .flatten()
+                        .unwrap_or_else(|| "v0".to_string())
+                        == citation.version_no
+                    && row
+                        .try_get::<Option<String>, _>("chunk_text")
+                        .ok()
+                        .flatten()
+                        .filter(|value| !value.trim().is_empty())
+                        .unwrap_or_else(|| {
+                            let content = row
+                                .try_get::<Option<String>, _>("content")
+                                .ok()
+                                .flatten()
+                                .unwrap_or_default();
+                            Self::first_line(&content)
+                        })
+                        == citation.snippet_text
+            });
+
+            let document_id = source_row.map(|row| row.get::<i64, _>("document_id")).unwrap_or(0);
+            let version_id = source_row
+                .and_then(|row| row.try_get::<Option<i64>, _>("current_version_id").ok().flatten())
+                .unwrap_or(0);
 
             sqlx::query(
                 "INSERT INTO answer_citations (
                     answer_id, document_id, version_id, segment_id, cite_order, score, snippet_text
-                 ) VALUES (?, ?, ?, ?, 1, 0.92, ?)",
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(answer_id)
             .bind(document_id)
             .bind(version_id)
-            .bind(segment_id)
-            .bind(&snippet_text)
+            .bind(citation.segment_id.map(|value| value as i64))
+            .bind(citation.cite_order as i32)
+            .bind(citation.score)
+            .bind(&citation.snippet_text)
             .execute(tx.as_mut())
             .await
             .expect("insert citation");
-
-            citations.push(Citation {
-                cite_order: 1,
-                segment_id: segment_id.map(|value| value as u64),
-                document_title,
-                version_no,
-                snippet_text,
-                score: 0.92,
-            });
         }
+
+        let meta_json = if llm_answer.is_some() {
+            format!("{{\"provider\":\"zhipu\",\"citation_count\":{}}}", citations.len())
+        } else {
+            format!("{{\"provider\":\"demo-rag\",\"citation_count\":{}}}", citations.len())
+        };
 
         sqlx::query(
             "INSERT INTO agent_runs (
-                agent_type, trigger_type, operator_user_id, question_id, answer_id, status, input_text, output_text, started_at, finished_at
-             ) VALUES ('answer', 'question_submit', ?, ?, ?, 'success', ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())",
+                agent_type, trigger_type, operator_user_id, question_id, answer_id, status, input_text, output_text, meta_json, started_at, finished_at
+             ) VALUES ('answer', 'question_submit', ?, ?, ?, 'success', ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())",
         )
         .bind(user_id as i64)
         .bind(question_id)
         .bind(answer_id)
         .bind(&question_text)
         .bind(&answer_text)
+        .bind(&meta_json)
         .execute(tx.as_mut())
         .await
         .expect("insert agent run");
@@ -1240,7 +1484,7 @@ impl AppStore for MySqlStore {
         QaAnswer {
             answer_id: answer_id as u64,
             answer_text,
-            confidence_score: 0.88,
+            confidence_score,
             citations,
             created_at: Utc::now(),
         }
@@ -2029,3 +2273,5 @@ impl AppStore for MySqlStore {
         self.load_document_detail_for_user(user_id, document_id).await.ok().flatten()
     }
 }
+
+

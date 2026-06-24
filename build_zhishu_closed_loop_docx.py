@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,6 +45,7 @@ class EntitySpec:
     title: str
     center: tuple[int, int]
     attributes: dict[str, Sequence[str]]
+    attribute_positions: dict[str, tuple[int, int]] | None = None
     width: int = 170
     height: int = 72
 
@@ -62,8 +63,7 @@ class RelationshipSpec:
 class LinkSpec:
     entity_key: str
     relationship_key: str
-    entity_card: str
-    relationship_card: str
+    card: str
 
 
 def load_font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -156,6 +156,14 @@ def draw_relationship(draw: ImageDraw.ImageDraw, spec: RelationshipSpec, *, font
 
 def attribute_centers(spec: EntitySpec) -> list[tuple[str, tuple[int, int]]]:
     centers: list[tuple[str, tuple[int, int]]] = []
+    if spec.attribute_positions:
+        for labels in spec.attributes.values():
+            for label in labels:
+                if label in spec.attribute_positions:
+                    centers.append((label, spec.attribute_positions[label]))
+        if centers:
+            return centers
+
     side_offsets = {
         "top": (-1, -118),
         "bottom": (-1, 118),
@@ -229,30 +237,13 @@ def draw_link(
     length = max((dx * dx + dy * dy) ** 0.5, 1)
     nx = -dy / length
     ny = dx / length
-    start_card_pos = (int(start[0] + dx * 0.28 + nx * 12), int(start[1] + dy * 0.28 + ny * 12))
-    draw_cardinality(draw, start_card_pos, link.entity_card, card_font)
-    end_card_pos = (int(start[0] + dx * 0.72 + nx * 12), int(start[1] + dy * 0.72 + ny * 12))
-    draw_cardinality(draw, end_card_pos, link.relationship_card, card_font)
-
-
-def add_diagram_header(draw: ImageDraw.ImageDraw, title: str, subtitle: str) -> None:
-    title_font = load_font(40, bold=True)
-    subtitle_font = load_font(22, bold=True)
-    draw_centered_text(draw, (120, 36, 1740, 96), title, title_font, (0, 0, 0))
-    draw_centered_text(draw, (120, 98, 1740, 140), subtitle, subtitle_font, (0, 0, 0))
-
-
-def add_diagram_footer(draw: ImageDraw.ImageDraw, text: str) -> None:
-    footer_font = load_font(20)
-    draw.text((100, 1026), text, font=footer_font, fill=ER_NOTE)
+    card_pos = (int(start[0] + dx * 0.55 + nx * 14), int(start[1] + dy * 0.55 + ny * 14))
+    draw_cardinality(draw, card_pos, link.card, card_font)
 
 
 def render_er_diagram(
     path: Path,
     *,
-    title: str,
-    subtitle: str,
-    footer: str,
     entities: Sequence[EntitySpec],
     relationships: Sequence[RelationshipSpec],
     links: Sequence[LinkSpec],
@@ -263,8 +254,6 @@ def render_er_diagram(
     relation_font = load_font(20, bold=True)
     attr_font = load_font(18)
     card_font = load_font(20, bold=True)
-
-    add_diagram_header(draw, title, subtitle)
 
     entity_map = {entity.key: entity for entity in entities}
     relationship_map = {relation.key: relation for relation in relationships}
@@ -278,7 +267,6 @@ def render_er_diagram(
     for entity in entities:
         draw_entity_attributes(draw, entity, entity_font=entity_font, attr_font=attr_font)
 
-    add_diagram_footer(draw, footer)
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path)
 
@@ -291,69 +279,138 @@ def build_er_diagrams() -> dict[str, Path]:
 
     render_er_diagram(
         diagrams["er1"],
-        title="图 4-1：基础知识管理域 E-R 图",
-        subtitle="实体先画矩形框，属性不含外码；联系采用菱形，数量关系在线两端标注 1 或 n。",
-        footer="说明：先从角色、用户、分类、文档讲起，再补标签和文档版本。",
         entities=[
-            EntitySpec("roles", "角色", (320, 270), {"top": ["角色编号"], "left": ["角色名称"], "right": ["角色说明"]}),
-            EntitySpec("users", "用户", (320, 770), {"left": ["用户编号"], "bottom": ["用户名"], "right": ["部门"]}),
-            EntitySpec("categories", "分类", (940, 250), {"top": ["分类编号"], "left": ["分类名称"], "right": ["分类说明"]}),
-            EntitySpec("documents", "文档", (940, 560), {"left": ["文档编号"], "bottom": ["标题"], "right": ["状态"]}),
-            EntitySpec("tags", "标签", (1540, 270), {"top": ["标签编号"], "left": ["标签名称"], "right": ["标签说明"]}),
-            EntitySpec("versions", "文档版本", (1540, 770), {"left": ["版本编号"], "bottom": ["版本号"], "right": ["变更说明"]}, width=190),
+            EntitySpec(
+                "roles",
+                "\u89d2\u8272",
+                (280, 250),
+                {"top": ["\u89d2\u8272\u7f16\u53f7"], "left": ["\u89d2\u8272\u540d\u79f0"], "bottom": ["\u89d2\u8272\u8bf4\u660e"]},
+                attribute_positions={"\u89d2\u8272\u7f16\u53f7": (280, 120), "\u89d2\u8272\u540d\u79f0": (105, 220), "\u89d2\u8272\u8bf4\u660e": (455, 220)},
+            ),
+            EntitySpec(
+                "users",
+                "\u7528\u6237",
+                (280, 785),
+                {"left": ["\u7528\u6237\u7f16\u53f7"], "bottom": ["\u7528\u6237\u540d"], "right": ["\u90e8\u95e8"]},
+                attribute_positions={"\u7528\u6237\u7f16\u53f7": (105, 760), "\u7528\u6237\u540d": (280, 940), "\u90e8\u95e8": (455, 820)},
+            ),
+            EntitySpec(
+                "categories",
+                "\u5206\u7c7b",
+                (930, 230),
+                {"top": ["\u5206\u7c7b\u7f16\u53f7"], "left": ["\u5206\u7c7b\u540d\u79f0"], "right": ["\u5206\u7c7b\u8bf4\u660e"]},
+                attribute_positions={"\u5206\u7c7b\u7f16\u53f7": (930, 105), "\u5206\u7c7b\u540d\u79f0": (740, 230), "\u5206\u7c7b\u8bf4\u660e": (1120, 230)},
+            ),
+            EntitySpec(
+                "documents",
+                "\u6587\u6863",
+                (930, 560),
+                {"left": ["\u6587\u6863\u7f16\u53f7"], "bottom": ["\u6807\u9898"], "right": ["\u72b6\u6001"]},
+                attribute_positions={"\u6587\u6863\u7f16\u53f7": (760, 705), "\u6807\u9898": (930, 730), "\u72b6\u6001": (1100, 705)},
+            ),
+            EntitySpec(
+                "tags",
+                "\u6807\u7b7e",
+                (1580, 230),
+                {"top": ["\u6807\u7b7e\u7f16\u53f7"], "right": ["\u6807\u7b7e\u540d\u79f0"], "bottom": ["\u6807\u7b7e\u8bf4\u660e"]},
+                attribute_positions={"\u6807\u7b7e\u7f16\u53f7": (1580, 105), "\u6807\u7b7e\u540d\u79f0": (1760, 220), "\u6807\u7b7e\u8bf4\u660e": (1580, 345)},
+            ),
+            EntitySpec(
+                "versions",
+                "\u6587\u6863\u7248\u672c",
+                (1580, 800),
+                {"right": ["\u7248\u672c\u7f16\u53f7"], "bottom": ["\u7248\u672c\u53f7"], "top": ["\u53d8\u66f4\u8bf4\u660e"]},
+                attribute_positions={"\u7248\u672c\u7f16\u53f7": (1765, 760), "\u7248\u672c\u53f7": (1580, 940), "\u53d8\u66f4\u8bf4\u660e": (1765, 855)},
+                width=190,
+            ),
         ],
         relationships=[
-            RelationshipSpec("owns", "拥有", (320, 520)),
-            RelationshipSpec("creates", "创建", (630, 665)),
-            RelationshipSpec("belongs", "归属", (940, 405)),
-            RelationshipSpec("binds", "标注", (1240, 405)),
-            RelationshipSpec("derives", "形成版本", (1240, 665), width=128),
+            RelationshipSpec("owns", "\u62e5\u6709", (280, 520)),
+            RelationshipSpec("creates", "\u521b\u5efa", (560, 665)),
+            RelationshipSpec("belongs", "\u5f52\u5c5e", (930, 395)),
+            RelationshipSpec("binds", "\u6807\u6ce8", (1255, 395)),
+            RelationshipSpec("derives", "\u5f62\u6210\u7248\u672c", (1255, 690), width=128),
         ],
         links=[
-            LinkSpec("roles", "owns", "1", "n"),
-            LinkSpec("users", "owns", "n", "1"),
-            LinkSpec("users", "creates", "1", "n"),
-            LinkSpec("documents", "creates", "n", "1"),
-            LinkSpec("documents", "belongs", "n", "1"),
-            LinkSpec("categories", "belongs", "1", "n"),
-            LinkSpec("documents", "binds", "n", "n"),
-            LinkSpec("tags", "binds", "n", "n"),
-            LinkSpec("documents", "derives", "1", "n"),
-            LinkSpec("versions", "derives", "n", "1"),
+            LinkSpec("roles", "owns", "1"),
+            LinkSpec("users", "owns", "n"),
+            LinkSpec("users", "creates", "1"),
+            LinkSpec("documents", "creates", "n"),
+            LinkSpec("documents", "belongs", "n"),
+            LinkSpec("categories", "belongs", "1"),
+            LinkSpec("documents", "binds", "n"),
+            LinkSpec("tags", "binds", "n"),
+            LinkSpec("documents", "derives", "1"),
+            LinkSpec("versions", "derives", "n"),
         ],
     )
 
     render_er_diagram(
         diagrams["er2"],
-        title="图 4-2：问答与版本追溯域 E-R 图",
-        subtitle="按题意只保留核心实体与联系，属性不写外码；引用证据负责把回答与文档版本连接起来。",
-        footer="说明：重点突出“问题—回答—引用证据—文档版本”的可追溯关系。",
         entities=[
-            EntitySpec("users", "用户", (270, 320), {"left": ["用户编号"], "bottom": ["用户名"]}),
-            EntitySpec("questions", "问题", (760, 300), {"top": ["问题编号"], "left": ["问题内容"], "right": ["状态"]}),
-            EntitySpec("answers", "回答", (760, 600), {"left": ["回答编号"], "right": ["模型"], "bottom": ["回答时间"]}),
-            EntitySpec("citations", "引用证据", (760, 860), {"left": ["引用编号"], "bottom": ["证据顺序"]}, width=190),
-            EntitySpec("documents", "文档", (1490, 320), {"top": ["文档编号"], "right": ["标题"]}),
-            EntitySpec("versions", "文档版本", (1490, 800), {"right": ["版本编号"], "bottom": ["版本号"]}, width=190),
+            EntitySpec(
+                "users",
+                "\u7528\u6237",
+                (250, 270),
+                {"left": ["\u7528\u6237\u7f16\u53f7"], "bottom": ["\u7528\u6237\u540d"]},
+                attribute_positions={"\u7528\u6237\u7f16\u53f7": (95, 245), "\u7528\u6237\u540d": (250, 400)},
+            ),
+            EntitySpec(
+                "questions",
+                "\u95ee\u9898",
+                (760, 270),
+                {"top": ["\u95ee\u9898\u7f16\u53f7"], "left": ["\u95ee\u9898\u5185\u5bb9"], "right": ["\u72b6\u6001"]},
+                attribute_positions={"\u95ee\u9898\u7f16\u53f7": (760, 140), "\u95ee\u9898\u5185\u5bb9": (560, 210), "\u72b6\u6001": (960, 210)},
+            ),
+            EntitySpec(
+                "answers",
+                "\u56de\u7b54",
+                (760, 570),
+                {"left": ["\u56de\u7b54\u7f16\u53f7"], "right": ["\u6a21\u578b"], "bottom": ["\u56de\u7b54\u65f6\u95f4"]},
+                attribute_positions={"\u56de\u7b54\u7f16\u53f7": (555, 555), "\u6a21\u578b": (965, 555), "\u56de\u7b54\u65f6\u95f4": (930, 700)},
+            ),
+            EntitySpec(
+                "citations",
+                "\u5f15\u7528\u8bc1\u636e",
+                (760, 845),
+                {"left": ["\u5f15\u7528\u7f16\u53f7"], "bottom": ["\u8bc1\u636e\u987a\u5e8f"]},
+                attribute_positions={"\u5f15\u7528\u7f16\u53f7": (545, 820), "\u8bc1\u636e\u987a\u5e8f": (760, 980)},
+                width=190,
+            ),
+            EntitySpec(
+                "documents",
+                "\u6587\u6863",
+                (1525, 270),
+                {"top": ["\u6587\u6863\u7f16\u53f7"], "right": ["\u6807\u9898"]},
+                attribute_positions={"\u6587\u6863\u7f16\u53f7": (1525, 140), "\u6807\u9898": (1715, 210)},
+            ),
+            EntitySpec(
+                "versions",
+                "\u6587\u6863\u7248\u672c",
+                (1525, 790),
+                {"right": ["\u7248\u672c\u7f16\u53f7"], "bottom": ["\u7248\u672c\u53f7"]},
+                attribute_positions={"\u7248\u672c\u7f16\u53f7": (1715, 760), "\u7248\u672c\u53f7": (1525, 940)},
+                width=190,
+            ),
         ],
         relationships=[
-            RelationshipSpec("asks", "提出", (500, 320)),
-            RelationshipSpec("generates", "生成回答", (760, 455), width=128),
-            RelationshipSpec("cites", "引用", (760, 730)),
-            RelationshipSpec("version_from", "形成版本", (1490, 565), width=128),
-            RelationshipSpec("locate_version", "定位版本", (1115, 860), width=128),
+            RelationshipSpec("asks", "\u63d0\u51fa", (500, 270)),
+            RelationshipSpec("generates", "\u751f\u6210\u56de\u7b54", (760, 420), width=128),
+            RelationshipSpec("cites", "\u5f15\u7528", (760, 705)),
+            RelationshipSpec("version_from", "\u5f62\u6210\u7248\u672c", (1525, 535), width=128),
+            RelationshipSpec("locate_version", "\u5b9a\u4f4d\u7248\u672c", (1145, 845), width=128),
         ],
         links=[
-            LinkSpec("users", "asks", "1", "n"),
-            LinkSpec("questions", "asks", "n", "1"),
-            LinkSpec("questions", "generates", "1", "n"),
-            LinkSpec("answers", "generates", "n", "1"),
-            LinkSpec("answers", "cites", "1", "n"),
-            LinkSpec("citations", "cites", "n", "1"),
-            LinkSpec("documents", "version_from", "1", "n"),
-            LinkSpec("versions", "version_from", "n", "1"),
-            LinkSpec("citations", "locate_version", "n", "1"),
-            LinkSpec("versions", "locate_version", "1", "n"),
+            LinkSpec("users", "asks", "1"),
+            LinkSpec("questions", "asks", "n"),
+            LinkSpec("questions", "generates", "1"),
+            LinkSpec("answers", "generates", "n"),
+            LinkSpec("answers", "cites", "1"),
+            LinkSpec("citations", "cites", "n"),
+            LinkSpec("documents", "version_from", "1"),
+            LinkSpec("versions", "version_from", "n"),
+            LinkSpec("citations", "locate_version", "n"),
+            LinkSpec("versions", "locate_version", "1"),
         ],
     )
 
@@ -520,32 +577,11 @@ def add_callout(doc: Document, title: str, body: str, fill: str = WARNING_FILL) 
     doc.add_paragraph()
 
 
-def add_figure(doc: Document, image_path: Path, caption: str, note: str) -> None:
+def add_figure(doc: Document, image_path: Path) -> None:
     doc.add_picture(str(image_path), width=Cm(16.5))
     picture_paragraph = doc.paragraphs[-1]
     picture_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    style_paragraph(picture_paragraph, space_before=4, space_after=4, line_spacing=1.0)
-    add_paragraph(
-        doc,
-        caption,
-        size=10,
-        bold=True,
-        color=ACCENT,
-        align=WD_ALIGN_PARAGRAPH.CENTER,
-        space_before=0,
-        space_after=2,
-        line_spacing=1.1,
-    )
-    add_paragraph(
-        doc,
-        note,
-        size=9.5,
-        color=RGBColor(96, 96, 96),
-        align=WD_ALIGN_PARAGRAPH.LEFT,
-        space_before=0,
-        space_after=8,
-        line_spacing=1.25,
-    )
+    style_paragraph(picture_paragraph, space_before=4, space_after=8, line_spacing=1.0)
 
 
 def configure_footer(doc: Document) -> None:
@@ -709,58 +745,10 @@ def add_section_3(doc: Document) -> None:
 
 
 def add_section_4(doc: Document) -> None:
-    add_section_heading(doc, "4. ER 逻辑重构方案", level=1)
-    add_paragraph(
-        doc,
-        "本节统一改成数据库课程标准答题格式：先画实体，再补属性与联系，数量关系直接在线两端写 1 或 n；属性里不写外码，外码只在后面的关系模式里体现。",
-    )
-
-    er_maps = TableSpec(
-        headers=["子图", "覆盖实体", "核心关系", "作图说明"],
-        rows=[
-            ["ER-1 基础知识管理域", "角色 / 用户 / 分类 / 文档 / 标签 / 文档版本", "角色-用户 1:n；用户-文档 1:n；分类-文档 1:n；文档-标签 n:n；文档-版本 1:n", "实体画矩形，属性单独挂接，不在属性中写外码"],
-            ["ER-2 问答与版本追溯域", "用户 / 问题 / 回答 / 引用证据 / 文档 / 文档版本", "用户-问题 1:n；问题-回答 1:n；回答-引用证据 1:n；文档-版本 1:n；引用证据-文档版本 n:1", "按题意只保留核心问答追溯链，避免实现层实体混入概念图"],
-        ],
-        widths=[1.5, 2.3, 2.3, 1.9],
-    )
-    add_table(doc, er_maps, title="4.1 ER 核心子图方案")
-    add_callout(
-        doc,
-        "绘图原则",
-        "概念 E-R 图只回答“有哪些实体、有哪些联系、联系基数是多少”。像外码、日志、对象存储、向量分段这些实现层内容，不直接画进实体属性里。",
-        fill=ACCENT_LIGHT,
-    )
-
+    add_section_heading(doc, "4. ER ??????", level=1)
     diagrams = build_er_diagrams()
-    add_figure(
-        doc,
-        diagrams["er1"],
-        "图 4-1  基础知识管理域 ER 图",
-        "讲解顺序建议：先说明实体，再说明联系，最后逐条读线两端的 1 或 n。",
-    )
-    add_figure(
-        doc,
-        diagrams["er2"],
-        "图 4-2  问答与版本追溯域 ER 图",
-        "该图强调回答不是直接连到文档，而是通过引用证据定位到文档版本，从而体现答案可追溯。",
-    )
-
-    relationship_spec = TableSpec(
-        headers=["联系名称", "参与实体", "基数", "落地方式"],
-        rows=[
-            ["拥有", "角色 - 用户", "1:n", "一对多联系并入用户，用户表中保存角色编号(FK)"],
-            ["创建", "用户 - 文档", "1:n", "一对多联系并入文档，文档表中保存创建者编号(FK)"],
-            ["归属", "分类 - 文档", "1:n", "一对多联系并入文档，文档表中保存分类编号(FK)"],
-            ["标注", "文档 - 标签", "n:n", "多对多联系单独转换为文档标签关系模式"],
-            ["形成版本", "文档 - 文档版本", "1:n", "一对多联系并入文档版本，文档版本表中保存文档编号(FK)"],
-            ["提出", "用户 - 问题", "1:n", "一对多联系并入问题，问题表中保存用户编号(FK)"],
-            ["生成回答", "问题 - 回答", "1:n", "一对多联系并入回答，回答表中保存问题编号(FK)"],
-            ["引用", "回答 - 引用证据", "1:n", "一对多联系并入引用证据，引用证据表中保存回答编号(FK)"],
-            ["定位版本", "引用证据 - 文档版本", "n:1", "一对多联系并入引用证据，引用证据表中保存版本编号(FK)"],
-        ],
-        widths=[1.1, 1.8, 0.8, 3.0],
-    )
-    add_table(doc, relationship_spec, title="4.2 联系说明总表")
+    add_figure(doc, diagrams["er1"])
+    add_figure(doc, diagrams["er2"])
 
 
 def add_section_5(doc: Document) -> None:
@@ -1195,3 +1183,7 @@ def build() -> None:
 
 if __name__ == "__main__":
     build()
+
+
+
+

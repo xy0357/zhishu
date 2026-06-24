@@ -1,4 +1,4 @@
-# 知枢
+﻿# 知枢
 
 企业知识资产管理与智能检索平台的首版可交付工程。
 
@@ -254,3 +254,57 @@ npm.cmd run dev
 - 当前前端已新增“配置管理”视图，可直接维护分类、标签与 FAQ。
 - 当前前端会按角色隐藏不允许访问的后台入口。
 - 数据库、向量、对象存储的生产化接入点已经在目录与脚本中预留。
+## 数据库系统课程演示速用版
+
+### 启动顺序
+
+1. 检查环境
+```powershell
+cd E:\zhishu\zhishu1
+powershell -ExecutionPolicy Bypass -File infra\scripts\check-route-b-prerequisites.ps1
+```
+要求至少看到：`cargo ok`、`npm ok`、`mysql ok`、`mysql:3306 reachable`。
+
+2. 启动后端（MySQL 模式）
+```powershell
+cd E:\zhishu\zhishu1
+powershell -ExecutionPolicy Bypass -File infra\scripts\start-mysql-backend.ps1
+```
+
+3. 启动前端
+```powershell
+cd E:\zhishu\zhishu1\frontend
+npm.cmd run dev
+```
+前端地址：`http://localhost:5173`
+
+4. 登录账号
+- `admin / Admin@123456`
+- `editor / Editor@123456`
+
+5. 录制前自检
+```powershell
+cd E:\zhishu\zhishu1
+powershell -ExecutionPolicy Bypass -File infra\scripts\run-route-b-acceptance.ps1
+```
+建议重点展示：`health.storage_backend = mysql`、`documents.count`、`categories.count`、`tags.count`、`users.count`、`answer_id`、`citations.count`、`agent_runs.count`。
+
+6. 可选 Qdrant 演示
+```powershell
+$env:QDRANT_URL="https://your-cluster.cloud.qdrant.io"
+$env:QDRANT_API_KEY="your-api-key"
+cd E:\zhishu\zhishu1
+powershell -ExecutionPolicy Bypass -File infra\scripts\export-qdrant-demo-points.ps1
+powershell -ExecutionPolicy Bypass -File infra\scripts\sync-qdrant-demo.ps1
+powershell -ExecutionPolicy Bypass -File infra\scripts\run-qdrant-demo-check.ps1
+powershell -ExecutionPolicy Bypass -File infra\scripts\search-qdrant-demo.ps1
+```
+
+### 演示顺序
+
+1. 先展示后端在 `MySQL` 模式启动成功。
+2. 再展示验收结果，证明数据真实落库。
+3. 再讲 ER 图和关系模式，重点讲 `1:n`、`n:n` 和外键落点。
+4. 然后展示首页、文档中心、配置管理、智能问答、Agent 记录。
+5. 最后总结：这是一个以 `MySQL` 为核心、Agent 为增强能力的知识管理系统。
+
